@@ -1,0 +1,370 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A100010001 /* StripArtApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020001 /* StripArtApp.swift */; };
+		A100010002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020002 /* ContentView.swift */; };
+		A100010003 /* LEDResolution.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020003 /* LEDResolution.swift */; };
+		A100010004 /* ScrollDirection.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020004 /* ScrollDirection.swift */; };
+		A100010005 /* AppScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020005 /* AppScreen.swift */; };
+		A100010006 /* StripArtViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020006 /* StripArtViewModel.swift */; };
+		A100010007 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020007 /* MainView.swift */; };
+		A100010008 /* CropView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020008 /* CropView.swift */; };
+		A100010009 /* DirectionPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020009 /* DirectionPickerView.swift */; };
+		A100010010 /* PreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020010 /* PreviewView.swift */; };
+		A100010011 /* ImageProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020011 /* ImageProcessor.swift */; };
+		A100010012 /* GIFExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020012 /* GIFExporter.swift */; };
+		A100010013 /* PhotoLibrarySaver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020013 /* PhotoLibrarySaver.swift */; };
+		A100010014 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A100020014 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A100020001 /* StripArtApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StripArtApp.swift; sourceTree = "<group>"; };
+		A100020002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A100020003 /* LEDResolution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LEDResolution.swift; sourceTree = "<group>"; };
+		A100020004 /* ScrollDirection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollDirection.swift; sourceTree = "<group>"; };
+		A100020005 /* AppScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppScreen.swift; sourceTree = "<group>"; };
+		A100020006 /* StripArtViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StripArtViewModel.swift; sourceTree = "<group>"; };
+		A100020007 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
+		A100020008 /* CropView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CropView.swift; sourceTree = "<group>"; };
+		A100020009 /* DirectionPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectionPickerView.swift; sourceTree = "<group>"; };
+		A100020010 /* PreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewView.swift; sourceTree = "<group>"; };
+		A100020011 /* ImageProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageProcessor.swift; sourceTree = "<group>"; };
+		A100020012 /* GIFExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GIFExporter.swift; sourceTree = "<group>"; };
+		A100020013 /* PhotoLibrarySaver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLibrarySaver.swift; sourceTree = "<group>"; };
+		A100020014 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A100020015 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A100020016 /* StripArt.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StripArt.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A100030001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A100040001 = {
+			isa = PBXGroup;
+			children = (
+				A100040002 /* StripArt */,
+				A100040003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A100040002 /* StripArt */ = {
+			isa = PBXGroup;
+			children = (
+				A100020001 /* StripArtApp.swift */,
+				A100020002 /* ContentView.swift */,
+				A100040004 /* Models */,
+				A100040005 /* ViewModels */,
+				A100040006 /* Views */,
+				A100040007 /* Services */,
+				A100040008 /* Resources */,
+				A100020015 /* Info.plist */,
+			);
+			path = StripArt;
+			sourceTree = "<group>";
+		};
+		A100040003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A100020016 /* StripArt.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A100040004 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A100020005 /* AppScreen.swift */,
+				A100020003 /* LEDResolution.swift */,
+				A100020004 /* ScrollDirection.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		A100040005 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A100020006 /* StripArtViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A100040006 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				A100020007 /* MainView.swift */,
+				A100020008 /* CropView.swift */,
+				A100020009 /* DirectionPickerView.swift */,
+				A100020010 /* PreviewView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		A100040007 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A100020011 /* ImageProcessor.swift */,
+				A100020012 /* GIFExporter.swift */,
+				A100020013 /* PhotoLibrarySaver.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		A100040008 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A100020014 /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A100050001 /* StripArt */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A100070003 /* Build configuration list for PBXNativeTarget "StripArt" */;
+			buildPhases = (
+				A100060001 /* Sources */,
+				A100030001 /* Frameworks */,
+				A100060002 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = StripArt;
+			productName = StripArt;
+			productReference = A100020016 /* StripArt.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A100080001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1640;
+				LastUpgradeCheck = 1640;
+				TargetAttributes = {
+					A100050001 = {
+						CreatedOnToolsVersion = 16.4;
+					};
+				};
+			};
+			buildConfigurationList = A100070001 /* Build configuration list for PBXProject "StripArt" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = nl;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+				nl,
+			);
+			mainGroup = A100040001;
+			productRefGroup = A100040003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A100050001 /* StripArt */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A100060002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A100010014 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A100060001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A100010001 /* StripArtApp.swift in Sources */,
+				A100010002 /* ContentView.swift in Sources */,
+				A100010003 /* LEDResolution.swift in Sources */,
+				A100010004 /* ScrollDirection.swift in Sources */,
+				A100010005 /* AppScreen.swift in Sources */,
+				A100010006 /* StripArtViewModel.swift in Sources */,
+				A100010007 /* MainView.swift in Sources */,
+				A100010008 /* CropView.swift in Sources */,
+				A100010009 /* DirectionPickerView.swift in Sources */,
+				A100010010 /* PreviewView.swift in Sources */,
+				A100010011 /* ImageProcessor.swift in Sources */,
+				A100010012 /* GIFExporter.swift in Sources */,
+				A100010013 /* PhotoLibrarySaver.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		A100090001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A100090002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		A100090003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = StripArt/Info.plist;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.stripart.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		A100090004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = StripArt/Info.plist;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.stripart.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A100070001 /* Build configuration list for PBXProject "StripArt" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A100090001 /* Debug */,
+				A100090002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A100070003 /* Build configuration list for PBXNativeTarget "StripArt" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A100090003 /* Debug */,
+				A100090004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A100080001 /* Project object */;
+}

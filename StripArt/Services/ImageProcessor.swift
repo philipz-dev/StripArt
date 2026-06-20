@@ -6,12 +6,31 @@ enum DitherMode {
     case monochrome
 }
 
+/// Undithered scroll strip plus metadata needed to re-render with another algorithm.
+struct ScrollAnimationSource: Sendable {
+    let unditheredPixels: [UInt8]
+    let sourceWidth: Int
+    let sourceHeight: Int
+    let targetWidth: Int
+    let targetHeight: Int
+    let baseViewport: CGRect
+    let offsets: [Int]
+    let direction: ScrollDirection
+}
+
 struct ImageProcessor {
 
     private static let sRGB = CGColorSpace(name: CGColorSpace.sRGB)!
     /// Explicit RGBA byte order — avoids misreading UIKit's default BGRA buffers.
     private static let rgbaBitmapInfo = CGBitmapInfo.byteOrder32Big.rawValue
         | CGImageAlphaInfo.noneSkipLast.rawValue
+
+    private static let bayer4x4: [[Int]] = [
+        [0, 8, 2, 10],
+        [12, 4, 14, 6],
+        [3, 11, 1, 9],
+        [15, 7, 13, 5]
+    ]
 
     // MARK: - Public API
 
@@ -20,27 +39,57 @@ struct ImageProcessor {
         cropRect: CGRect,
         resolution: LEDResolution,
         direction: ScrollDirection,
+        algorithm: DitherAlgorithm = .floydSteinberg,
         ditherMode: DitherMode = .rgb,
         levelsPerChannel: Int = 8
     ) -> [CGImage] {
+        guard let source = prepareScrollAnimationSource(
+            from: image,
+            cropRect: cropRect,
+            resolution: resolution,
+            direction: direction
+        ) else {
+            return []
+        }
+
+        return renderScrollAnimation(
+            from: source,
+            algorithm: algorithm,
+            mode: ditherMode,
+            levelsPerChannel: levelsPerChannel
+        )
+    }
+
+    func prepareScrollAnimationSource(
+        from image: UIImage,
+        cropRect: CGRect,
+        endCropRect: CGRect? = nil,
+        resolution: LEDResolution,
+        direction: ScrollDirection
+    ) -> ScrollAnimationSource? {
         guard resolution.isValid,
               let cgImage = image.cgImage,
               cropRect.width > 0,
               cropRect.height > 0 else {
-            return []
+            return nil
         }
 
-        let adjustedCrop = cropRect.scaled(
-            from: CGSize(width: image.size.width, height: image.size.height),
-            to: CGSize(width: cgImage.width, height: cgImage.height)
-        )
+        let imageSize = CGSize(width: cgImage.width, height: cgImage.height)
+        let pointSize = CGSize(width: image.size.width, height: image.size.height)
+
+        let adjustedCrop = cropRect.scaled(from: pointSize, to: imageSize)
+        // A zero end rect means "no explicit end position".
+        let adjustedEnd: CGRect? = {
+            guard let endCropRect, endCropRect.width > 0, endCropRect.height > 0 else { return nil }
+            return endCropRect.scaled(from: pointSize, to: imageSize)
+        }()
 
         let targetWidth = resolution.width
         let targetHeight = resolution.height
-        let imageSize = CGSize(width: cgImage.width, height: cgImage.height)
 
         var workingImage = cgImage
         var workingCrop = adjustedCrop
+        var workingEnd = adjustedEnd
         var workingImageSize = imageSize
 
         var sourceStrip = sourceStripRect(
@@ -64,8 +113,6 @@ struct ImageProcessor {
             workingHeight = max(1, Int((sourceStrip.height * stripScale).rounded()))
         }
 
-        // Downsample the source photo when the strip holds far more pixels than the
-        // animation will ever use — avoids decoding/processing 12 MP for a 96×16 output.
         let oversample: CGFloat = 2
         let preScale = min(
             1,
@@ -86,6 +133,14 @@ struct ImageProcessor {
                     width: adjustedCrop.width * preScale,
                     height: adjustedCrop.height * preScale
                 )
+                workingEnd = adjustedEnd.map { rect in
+                    CGRect(
+                        x: rect.minX * preScale,
+                        y: rect.minY * preScale,
+                        width: rect.width * preScale,
+                        height: rect.height * preScale
+                    )
+                }
                 sourceStrip = sourceStripRect(
                     crop: workingCrop,
                     imageSize: workingImageSize,
@@ -110,23 +165,12 @@ struct ImageProcessor {
             sourceRect: sourceStrip,
             width: workingWidth,
             height: workingHeight
-        ) else {
-            return []
+        ),
+              let unditheredPixels = copyPixelData(from: scaledSource) else {
+            return nil
         }
-
-        guard var pixels = copyPixelData(from: scaledSource) else {
-            return []
-        }
-        floydSteinbergDitherInPlace(
-            &pixels,
-            width: workingWidth,
-            height: workingHeight,
-            mode: ditherMode,
-            levelsPerChannel: levelsPerChannel
-        )
 
         let sourceSize = CGSize(width: workingWidth, height: workingHeight)
-
         let scaledCrop = scaledCropRect(
             crop: workingCrop,
             sourceStrip: sourceStrip,
@@ -141,42 +185,83 @@ struct ImageProcessor {
             direction: direction
         )
 
-        guard scrollRange.maxOffset >= scrollRange.minOffset else {
-            if let frame = extractFrame(
-                from: pixels,
-                sourceWidth: workingWidth,
-                viewport: scaledCrop,
+        let minOffset = scrollRange.minOffset
+        var maxOffset = scrollRange.maxOffset
+
+        // Limit scrolling to the user-defined end position when provided.
+        if let workingEnd {
+            let scaledEnd = scaledCropRect(
+                crop: workingEnd,
+                sourceStrip: sourceStrip,
+                stripScale: stripScale,
                 targetWidth: targetWidth,
                 targetHeight: targetHeight
-            ) {
-                return [frame, frame]
+            )
+            let endOffset: CGFloat
+            switch direction.scrollAxis {
+            case .horizontal:
+                endOffset = abs(scaledEnd.minX - scaledCrop.minX)
+            case .vertical:
+                endOffset = abs(scaledEnd.minY - scaledCrop.minY)
             }
-            return []
+            maxOffset = min(maxOffset, max(0, Int(endOffset.rounded())))
         }
 
-        var offsets: [Int] = []
-        offsets.reserveCapacity((scrollRange.maxOffset - scrollRange.minOffset + 1) * 2)
-        for offset in scrollRange.minOffset...scrollRange.maxOffset {
-            offsets.append(offset)
-        }
-        if scrollRange.maxOffset > scrollRange.minOffset {
-            for offset in stride(from: scrollRange.maxOffset - 1, through: scrollRange.minOffset, by: -1) {
-                offsets.append(offset)
+        let offsets: [Int]
+        if maxOffset > minOffset {
+            var values: [Int] = []
+            values.reserveCapacity((maxOffset - minOffset + 1) * 2)
+            for offset in minOffset...maxOffset {
+                values.append(offset)
             }
+            for offset in stride(from: maxOffset - 1, through: minOffset, by: -1) {
+                values.append(offset)
+            }
+            offsets = values
+        } else {
+            offsets = [0, 0]
         }
 
-        return offsets.compactMap { offset in
+        return ScrollAnimationSource(
+            unditheredPixels: unditheredPixels,
+            sourceWidth: workingWidth,
+            sourceHeight: workingHeight,
+            targetWidth: targetWidth,
+            targetHeight: targetHeight,
+            baseViewport: scaledCrop,
+            offsets: offsets,
+            direction: direction
+        )
+    }
+
+    func renderScrollAnimation(
+        from source: ScrollAnimationSource,
+        algorithm: DitherAlgorithm,
+        mode: DitherMode = .rgb,
+        levelsPerChannel: Int = 8
+    ) -> [CGImage] {
+        var pixels = source.unditheredPixels
+        applyDither(
+            &pixels,
+            width: source.sourceWidth,
+            height: source.sourceHeight,
+            algorithm: algorithm,
+            mode: mode,
+            levelsPerChannel: levelsPerChannel
+        )
+
+        return source.offsets.compactMap { offset in
             let viewport = viewportRect(
-                base: scaledCrop,
+                base: source.baseViewport,
                 offset: offset,
-                direction: direction
+                direction: source.direction
             )
             return extractFrame(
                 from: pixels,
-                sourceWidth: workingWidth,
+                sourceWidth: source.sourceWidth,
                 viewport: viewport,
-                targetWidth: targetWidth,
-                targetHeight: targetHeight
+                targetWidth: source.targetWidth,
+                targetHeight: source.targetHeight
             )
         }
     }
@@ -235,22 +320,78 @@ struct ImageProcessor {
         levelsPerChannel: Int = 8
     ) -> CGImage? {
         guard var pixels = copyPixelData(from: image) else { return nil }
-        floydSteinbergDitherInPlace(
+        applyDither(
             &pixels,
             width: image.width,
             height: image.height,
+            algorithm: .floydSteinberg,
             mode: mode,
             levelsPerChannel: levelsPerChannel
         )
         return makeCGImage(from: pixels, width: image.width, height: image.height)
     }
 
-    private func floydSteinbergDitherInPlace(
+    private func applyDither(
+        _ pixels: inout [UInt8],
+        width: Int,
+        height: Int,
+        algorithm: DitherAlgorithm,
+        mode: DitherMode,
+        levelsPerChannel: Int
+    ) {
+        switch algorithm {
+        case .floydSteinberg:
+            errorDiffusionDitherInPlace(
+                &pixels,
+                width: width,
+                height: height,
+                mode: mode,
+                levelsPerChannel: levelsPerChannel,
+                neighbors: Self.floydSteinbergNeighbors
+            )
+        case .atkinson:
+            errorDiffusionDitherInPlace(
+                &pixels,
+                width: width,
+                height: height,
+                mode: mode,
+                levelsPerChannel: levelsPerChannel,
+                neighbors: Self.atkinsonNeighbors
+            )
+        case .ordered:
+            orderedDitherInPlace(
+                &pixels,
+                width: width,
+                height: height,
+                mode: mode,
+                levelsPerChannel: levelsPerChannel
+            )
+        }
+    }
+
+    private static let floydSteinbergNeighbors: [(Int, Int, Double)] = [
+        (1, 0, 7.0 / 16.0),
+        (-1, 1, 3.0 / 16.0),
+        (0, 1, 5.0 / 16.0),
+        (1, 1, 1.0 / 16.0)
+    ]
+
+    private static let atkinsonNeighbors: [(Int, Int, Double)] = [
+        (1, 0, 1.0 / 8.0),
+        (2, 0, 1.0 / 8.0),
+        (-1, 1, 1.0 / 8.0),
+        (0, 1, 1.0 / 8.0),
+        (1, 1, 1.0 / 8.0),
+        (0, 2, 1.0 / 8.0)
+    ]
+
+    private func errorDiffusionDitherInPlace(
         _ pixels: inout [UInt8],
         width: Int,
         height: Int,
         mode: DitherMode,
-        levelsPerChannel: Int
+        levelsPerChannel: Int,
+        neighbors: [(Int, Int, Double)]
     ) {
         let levels = max(2, levelsPerChannel)
         let step = 255.0 / Double(levels - 1)
@@ -300,8 +441,54 @@ struct ImageProcessor {
                     height: height,
                     x: x,
                     y: y,
-                    error: (errR, errG, errB)
+                    error: (errR, errG, errB),
+                    neighbors: neighbors
                 )
+            }
+        }
+    }
+
+    private func orderedDitherInPlace(
+        _ pixels: inout [UInt8],
+        width: Int,
+        height: Int,
+        mode: DitherMode,
+        levelsPerChannel: Int
+    ) {
+        let levels = max(2, levelsPerChannel)
+        let step = 255.0 / Double(levels - 1)
+
+        func quantize(_ value: Double, threshold: Double) -> Double {
+            let adjusted = value + (threshold - 0.5) * step
+            return (adjusted / step).rounded() * step
+        }
+
+        for y in 0..<height {
+            for x in 0..<width {
+                let index = (y * width + x) * 4
+                let threshold = (Double(Self.bayer4x4[y % 4][x % 4]) + 0.5) / 16.0
+
+                let oldR = Double(pixels[index])
+                let oldG = Double(pixels[index + 1])
+                let oldB = Double(pixels[index + 2])
+
+                let newR = quantize(oldR, threshold: threshold)
+                let newG = quantize(oldG, threshold: threshold)
+                let newB = quantize(oldB, threshold: threshold)
+
+                switch mode {
+                case .rgb:
+                    pixels[index] = UInt8(clamping: Int(newR.rounded()))
+                    pixels[index + 1] = UInt8(clamping: Int(newG.rounded()))
+                    pixels[index + 2] = UInt8(clamping: Int(newB.rounded()))
+                case .monochrome:
+                    let gray = quantize(0.299 * newR + 0.587 * newG + 0.114 * newB, threshold: threshold)
+                    let value = UInt8(clamping: Int(gray.rounded()))
+                    pixels[index] = value
+                    pixels[index + 1] = value
+                    pixels[index + 2] = value
+                }
+                pixels[index + 3] = 255
             }
         }
     }
@@ -481,7 +668,8 @@ struct ImageProcessor {
         height: Int,
         x: Int,
         y: Int,
-        error: (Double, Double, Double)
+        error: (Double, Double, Double),
+        neighbors: [(Int, Int, Double)]
     ) {
         func addError(to px: Int, factor: Double) {
             guard px >= 0, px + 2 < pixels.count else { return }
@@ -493,14 +681,9 @@ struct ImageProcessor {
             pixels[px + 2] = UInt8(clamping: Int(b.rounded()))
         }
 
-        let coords: [(Int, Int, Double)] = [
-            (x + 1, y, 7.0 / 16.0),
-            (x - 1, y + 1, 3.0 / 16.0),
-            (x, y + 1, 5.0 / 16.0),
-            (x + 1, y + 1, 1.0 / 16.0)
-        ]
-
-        for (cx, cy, factor) in coords {
+        for (dx, dy, factor) in neighbors {
+            let cx = x + dx
+            let cy = y + dy
             guard cx >= 0, cx < width, cy >= 0, cy < height else { continue }
             addError(to: (cy * width + cx) * 4, factor: factor)
         }

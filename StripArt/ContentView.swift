@@ -5,15 +5,8 @@ struct ContentView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                screenContent
-
-                if viewModel.screen == .direction {
-                    DirectionPickerView(viewModel: viewModel)
-                        .transition(.opacity)
-                }
-            }
-            .animation(.easeInOut(duration: 0.25), value: viewModel.screen)
+            screenContent
+                .animation(.easeInOut(duration: 0.25), value: viewModel.screen)
         }
         .alert("Error", isPresented: errorBinding) {
             Button("OK", role: .cancel) {
@@ -38,8 +31,8 @@ struct ContentView: View {
             MainView(viewModel: viewModel)
         case .crop:
             CropView(viewModel: viewModel)
-        case .direction:
-            CropView(viewModel: viewModel)
+        case .frameRate:
+            FrameRateView(viewModel: viewModel)
         case .preview:
             PreviewView(viewModel: viewModel)
         }

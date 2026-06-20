@@ -61,6 +61,9 @@ struct CropView: View {
 
     private var overlayControls: some View {
         VStack {
+            topControls
+                .padding(.top, 60)
+
             Spacer()
 
             HStack {
@@ -71,15 +74,58 @@ struct CropView: View {
                 Spacer()
 
                 transparentCircleButton(systemName: "checkmark") {
-                    viewModel.confirmCrop(
-                        imageDisplayRect: imageDisplayRect,
-                        imagePixelSize: imagePixelSize
-                    )
+                    if viewModel.cropPhase == .start {
+                        viewModel.confirmStartPhase(
+                            imageDisplayRect: imageDisplayRect,
+                            imagePixelSize: imagePixelSize
+                        )
+                    } else {
+                        viewModel.confirmEndPhase(
+                            imageDisplayRect: imageDisplayRect,
+                            imagePixelSize: imagePixelSize
+                        )
+                    }
                 }
             }
             .padding(.horizontal, 32)
             .padding(.bottom, 40)
         }
+    }
+
+    private var topControls: some View {
+        VStack(spacing: 16) {
+            Text(viewModel.cropPhase == .start ? "Choose start size & position" : "Choose end position")
+                .font(.headline)
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+                .shadow(radius: 4)
+
+            HStack(spacing: 14) {
+                ForEach(ScrollDirection.allCases) { direction in
+                    directionArrow(direction)
+                }
+            }
+        }
+        .padding(.horizontal, 24)
+    }
+
+    private func directionArrow(_ direction: ScrollDirection) -> some View {
+        let selected = viewModel.scrollDirection == direction
+        return Button {
+            viewModel.selectScrollDirection(direction)
+        } label: {
+            Image(systemName: direction.systemImageName)
+                .font(.title3.bold())
+                .foregroundStyle(selected ? .white : .white.opacity(0.85))
+                .frame(width: 48, height: 48)
+                .background(
+                    Circle().fill(selected ? Color.accentColor : Color.white.opacity(0.15))
+                )
+                .overlay(
+                    Circle().stroke(.white.opacity(selected ? 0.9 : 0.35), lineWidth: selected ? 2 : 1)
+                )
+        }
+        .buttonStyle(.plain)
     }
 
     private func transparentCircleButton(
@@ -107,11 +153,11 @@ struct CropView: View {
 
                 let dx = value.translation.width / imageRect.width
                 let dy = value.translation.height / imageRect.height
+                let proposed = CGPoint(x: start.x + dx, y: start.y + dy)
                 viewModel.mutateCropState(in: imageRect.size) { state in
-                    state.center = CGPoint(
-                        x: start.x + dx,
-                        y: start.y + dy
-                    )
+                    state.center = viewModel.cropPhase == .end
+                        ? viewModel.constrainedEndCenter(proposed)
+                        : proposed
                 }
             }
             .onEnded { _ in
@@ -122,6 +168,8 @@ struct CropView: View {
     private func pinchGesture(in imageRect: CGRect) -> some Gesture {
         MagnificationGesture()
             .onChanged { value in
+                // Scaling is only allowed while choosing the start size.
+                guard viewModel.cropPhase == .start else { return }
                 if pinchStartScale == nil {
                     pinchStartScale = viewModel.cropState.scale
                 }

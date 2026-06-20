@@ -10,6 +10,8 @@ struct PreviewView: View {
 
             previewArea
 
+            ditherPicker
+
             if let direction = viewModel.scrollDirection {
                 Text("Direction: \(direction.label) · \(viewModel.resolution.height)×\(viewModel.resolution.width) px")
                     .font(.caption)
@@ -41,17 +43,17 @@ struct PreviewView: View {
     @ViewBuilder
     private var previewArea: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 16)
+            Rectangle()
                 .fill(Color.black)
                 .aspectRatio(viewModel.resolution.aspectRatio, contentMode: .fit)
                 .frame(maxWidth: .infinity)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16)
+                    Rectangle()
                         .stroke(.secondary.opacity(0.35), lineWidth: 1)
                 )
 
-            if viewModel.isProcessing {
-                ProgressView("Processing…")
+            if viewModel.isProcessing || viewModel.isReprocessingDither {
+                ProgressView(viewModel.isReprocessingDither ? "Applying dither…" : "Processing…")
                     .tint(.white)
                     .foregroundStyle(.white)
             } else if !viewModel.frames.isEmpty {
@@ -61,10 +63,45 @@ struct PreviewView: View {
                     .resizable()
                     .aspectRatio(viewModel.resolution.aspectRatio, contentMode: .fit)
                     .frame(maxWidth: .infinity)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
             }
         }
         .frame(maxHeight: 280)
+    }
+
+    private var ditherPicker: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Dithering algorithm")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 8) {
+                ForEach(DitherAlgorithm.allCases) { algorithm in
+                    Button {
+                        viewModel.selectDitherAlgorithm(algorithm)
+                    } label: {
+                        Text(algorithm.label)
+                            .font(.caption.weight(.semibold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .fill(
+                                        viewModel.ditherAlgorithm == algorithm
+                                            ? Color.accentColor
+                                            : Color(.secondarySystemFill)
+                                    )
+                            )
+                            .foregroundStyle(
+                                viewModel.ditherAlgorithm == algorithm ? .white : .primary
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(viewModel.isReprocessingDither || viewModel.isProcessing)
+                }
+            }
+        }
     }
 
     private var actionButtons: some View {
@@ -73,7 +110,7 @@ struct PreviewView: View {
                 Button(role: .cancel) {
                     viewModel.cancelPreview()
                 } label: {
-                    Text("Cancel")
+                    Text("Back")
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
                 }
@@ -93,7 +130,7 @@ struct PreviewView: View {
                     .padding(.vertical, 14)
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(viewModel.isProcessing || viewModel.frames.isEmpty || viewModel.isSaving)
+                .disabled(viewModel.isProcessing || viewModel.isReprocessingDither || viewModel.frames.isEmpty || viewModel.isSaving)
             }
 
             Button {
@@ -104,7 +141,7 @@ struct PreviewView: View {
                     .padding(.vertical, 12)
             }
             .buttonStyle(.bordered)
-            .disabled(viewModel.gifData == nil || viewModel.isProcessing)
+            .disabled(viewModel.gifData == nil || viewModel.isProcessing || viewModel.isReprocessingDither)
         }
     }
 

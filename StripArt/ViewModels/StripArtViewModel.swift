@@ -15,7 +15,11 @@ final class StripArtViewModel: ObservableObject {
     @Published var selectedPhotoItem: PhotosPickerItem?
     @Published var sourceImage: UIImage?
     @Published var cropState = CropOverlayState()
-    @Published var scrollDirection: ScrollDirection?
+    @Published var scrollDirection: ScrollDirection? = .down
+    @Published var ditherAlgorithm: DitherAlgorithm = .floydSteinberg
+
+    /// Two-step crop: first pick start size & position, then the end position.
+    @Published private(set) var cropPhase: CropPhase = .start
 
     // MARK: - Flow state
 
@@ -23,17 +27,37 @@ final class StripArtViewModel: ObservableObject {
     @Published private(set) var frames: [UIImage] = []
     @Published private(set) var gifData: Data?
     @Published private(set) var isProcessing = false
+    @Published private(set) var isReprocessingDither = false
     @Published private(set) var isSaving = false
     @Published var errorMessage: String?
     @Published var saveSuccessMessage: String?
+
+    // MARK: - Frame rate
+
+    /// Number of frames the user wants in the bounce. Defaults to the full
+    /// 1-pixel-per-step count and can only be decreased, never increased.
+    @Published var frameCount: Int = 0
+    @Published private(set) var maxFrameCount: Int = 0
+    @Published private(set) var isPreparingFrames = false
+
+    /// Smallest meaningful animation length.
+    let minFrameCount = 2
 
     // MARK: - Animation
 
     @Published private(set) var currentFrameIndex = 0
     private var animationTask: Task<Void, Never>?
     private var cgFrames: [CGImage] = []
+    /// Full 1-pixel-per-step bounce; user selections subsample from this.
+    private var fullCgFrames: [CGImage] = []
+    /// Undithered scroll strip kept for live algorithm switching in preview.
+    private var scrollAnimationSource: ScrollAnimationSource?
 
     private var confirmedCropRect: CGRect = .zero
+    /// End viewport (same size as start) in image pixel coordinates.
+    private var endCropRect: CGRect = .zero
+    /// Normalized overlay center captured when the start phase is confirmed.
+    private var phaseStartCenter: CGPoint = CGPoint(x: 0.5, y: 0.5)
 
     var resolutionIsValid: Bool {
         resolution.isValid
@@ -45,20 +69,45 @@ final class StripArtViewModel: ObservableObject {
 
     // MARK: - Navigation
 
+    func clearSelectedPhoto() {
+        selectedPhotoItem = nil
+        sourceImage = nil
+    }
+
     func goToCrop() {
         guard canProceedFromMain else { return }
         syncResolutionFromText()
         var state = cropState
         state.reset(for: resolution.aspectRatio)
         cropState = state
+        cropPhase = .start
+        scrollDirection = .down
         screen = .crop
     }
 
+    /// X button on the crop screen.
     func cancelCrop() {
-        screen = .main
+        if cropPhase == .end {
+            // Step back to choosing the start size & position.
+            cropPhase = .start
+        } else {
+            screen = .main
+        }
     }
 
-    func confirmCrop(imageDisplayRect: CGRect, imagePixelSize: CGSize) {
+    func selectScrollDirection(_ direction: ScrollDirection) {
+        scrollDirection = direction
+        // When changing direction during the end phase, restart from the start
+        // position so movement is valid along the new axis.
+        if cropPhase == .end {
+            var state = cropState
+            state.center = phaseStartCenter
+            cropState = state
+        }
+    }
+
+    /// Checkmark in the start phase: lock the size, switch to choosing the end.
+    func confirmStartPhase(imageDisplayRect: CGRect, imagePixelSize: CGSize) {
         let cropRect = cropState.cropRectInImageCoordinates(
             imageDisplayRect: imageDisplayRect,
             imagePixelSize: imagePixelSize
@@ -68,17 +117,55 @@ final class StripArtViewModel: ObservableObject {
             return
         }
         confirmedCropRect = cropRect
-        screen = .direction
+        phaseStartCenter = cropState.center
+        cropPhase = .end
     }
 
-    func cancelDirection() {
+    /// Checkmark in the end phase: capture the end position and continue.
+    func confirmEndPhase(imageDisplayRect: CGRect, imagePixelSize: CGSize) {
+        guard let direction = scrollDirection else { return }
+        endCropRect = cropState.cropRectInImageCoordinates(
+            imageDisplayRect: imageDisplayRect,
+            imagePixelSize: imagePixelSize
+        )
+        screen = .frameRate
+        prepareAnimation(direction: direction)
+    }
+
+    /// Restricts the end-phase overlay to move only along (and in) the arrow's direction.
+    func constrainedEndCenter(_ proposed: CGPoint) -> CGPoint {
+        guard let direction = scrollDirection else { return proposed }
+        switch direction.scrollAxis {
+        case .vertical:
+            let y = direction == .down
+                ? max(phaseStartCenter.y, proposed.y)
+                : min(phaseStartCenter.y, proposed.y)
+            return CGPoint(x: phaseStartCenter.x, y: y)
+        case .horizontal:
+            let x = direction == .right
+                ? max(phaseStartCenter.x, proposed.x)
+                : min(phaseStartCenter.x, proposed.x)
+            return CGPoint(x: x, y: phaseStartCenter.y)
+        }
+    }
+
+    func cancelFrameRate() {
+        stopAnimation()
+        cropPhase = .end
         screen = .crop
     }
 
-    func selectDirection(_ direction: ScrollDirection) {
-        scrollDirection = direction
+    func confirmFrameRate() {
+        guard !fullCgFrames.isEmpty else { return }
+
+        let selected = min(max(minFrameCount, frameCount), maxFrameCount)
+        let subsampled = Self.subsample(fullCgFrames, to: selected)
+
+        cgFrames = subsampled
+        frames = subsampled.map { UIImage(cgImage: $0) }
+        gifData = nil
         screen = .preview
-        startProcessing(direction: direction)
+        startAnimation()
     }
 
     func cancelPreview() {
@@ -86,10 +173,25 @@ final class StripArtViewModel: ObservableObject {
         frames = []
         cgFrames = []
         gifData = nil
-        scrollDirection = nil
-        screen = .main
+        screen = .frameRate
+    }
+
+    func returnToMain() {
+        stopAnimation()
+        frames = []
+        cgFrames = []
+        fullCgFrames = []
+        scrollAnimationSource = nil
+        gifData = nil
+        frameCount = 0
+        maxFrameCount = 0
+        scrollDirection = .down
+        ditherAlgorithm = .floydSteinberg
+        cropPhase = .start
+        endCropRect = .zero
         selectedPhotoItem = nil
         sourceImage = nil
+        screen = .main
     }
 
     // MARK: - Photo loading
@@ -115,41 +217,116 @@ final class StripArtViewModel: ObservableObject {
 
     // MARK: - Processing
 
-    func startProcessing(direction: ScrollDirection) {
+    /// Generates the full 1-pixel-per-step bounce so the frame-rate screen knows
+    /// the maximum frame count. The user can then subsample down from this.
+    private func prepareAnimation(direction: ScrollDirection) {
         guard let sourceImage else { return }
 
-        isProcessing = true
+        isPreparingFrames = true
         frames = []
         cgFrames = []
+        fullCgFrames = []
+        scrollAnimationSource = nil
         gifData = nil
+        maxFrameCount = 0
         stopAnimation()
 
         let cropRect = confirmedCropRect
+        let endRect = endCropRect
         let resolution = resolution
+        let algorithm = ditherAlgorithm
         let processor = ImageProcessor()
 
         Task {
-            let result = await Task.detached(priority: .userInitiated) {
-                let generated = processor.generateScrollAnimation(
+            let source = await Task.detached(priority: .userInitiated) {
+                processor.prepareScrollAnimationSource(
                     from: sourceImage,
                     cropRect: cropRect,
+                    endCropRect: endRect,
                     resolution: resolution,
                     direction: direction
                 )
-                let uiFrames = generated.map { UIImage(cgImage: $0) }
-                return (generated, uiFrames)
             }.value
 
-            cgFrames = result.0
-            frames = result.1
-            isProcessing = false
-
-            if frames.isEmpty {
+            guard let source else {
+                isPreparingFrames = false
                 errorMessage = "Could not generate animation."
-            } else {
-                startAnimation()
+                cropPhase = .end
+                screen = .crop
+                return
+            }
+
+            scrollAnimationSource = source
+
+            let generated = await Task.detached(priority: .userInitiated) {
+                processor.renderScrollAnimation(from: source, algorithm: algorithm)
+            }.value
+
+            fullCgFrames = generated
+            maxFrameCount = generated.count
+            frameCount = generated.count
+            isPreparingFrames = false
+
+            if generated.isEmpty {
+                errorMessage = "Could not generate animation."
+                cropPhase = .end
+                screen = .crop
             }
         }
+    }
+
+    func selectDitherAlgorithm(_ algorithm: DitherAlgorithm) {
+        guard algorithm != ditherAlgorithm,
+              scrollAnimationSource != nil,
+              screen == .preview else {
+            return
+        }
+
+        ditherAlgorithm = algorithm
+        reapplyDitherAlgorithm()
+    }
+
+    private func reapplyDitherAlgorithm() {
+        guard let source = scrollAnimationSource else { return }
+
+        stopAnimation()
+        isReprocessingDither = true
+        gifData = nil
+
+        let algorithm = ditherAlgorithm
+        let selectedFrameCount = min(max(minFrameCount, frameCount), maxFrameCount)
+        let processor = ImageProcessor()
+
+        Task {
+            let rendered = await Task.detached(priority: .userInitiated) {
+                processor.renderScrollAnimation(from: source, algorithm: algorithm)
+            }.value
+
+            fullCgFrames = rendered
+            maxFrameCount = rendered.count
+
+            let subsampled = Self.subsample(rendered, to: selectedFrameCount)
+            cgFrames = subsampled
+            frames = subsampled.map { UIImage(cgImage: $0) }
+            isReprocessingDither = false
+            startAnimation()
+        }
+    }
+
+    /// Evenly picks `count` frames from `frames`, preserving the first and last.
+    private static func subsample(_ frames: [CGImage], to count: Int) -> [CGImage] {
+        guard count > 0 else { return [] }
+        guard frames.count > count else { return frames }
+        guard count > 1 else { return [frames[0]] }
+
+        let last = frames.count - 1
+        var result = [CGImage]()
+        result.reserveCapacity(count)
+        for i in 0..<count {
+            let position = Double(i) * Double(last) / Double(count - 1)
+            result.append(frames[Int(position.rounded())])
+        }
+        return result
     }
 
     // MARK: - Animation playback
@@ -195,7 +372,7 @@ final class StripArtViewModel: ObservableObject {
 
         do {
             try await PhotoLibrarySaver.saveGIF(data)
-            saveSuccessMessage = "GIF saved to Photo Library."
+            returnToMain()
         } catch {
             errorMessage = error.localizedDescription
         }

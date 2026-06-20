@@ -1,6 +1,11 @@
 enum AppScreen: Equatable {
     case main
     case crop
-    case direction
+    case frameRate
     case preview
+}
+
+enum CropPhase: Equatable {
+    case start
+    case end
 }

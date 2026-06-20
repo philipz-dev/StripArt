@@ -8,6 +8,11 @@ struct CropView: View {
     @State private var dragStartCenter: CGPoint?
     @State private var pinchStartScale: CGFloat?
 
+    /// Vertical space reserved for the top controls and bottom action buttons,
+    /// so the photo never sits underneath them.
+    private let topReserved: CGFloat = 150
+    private let bottomReserved: CGFloat = 130
+
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -41,6 +46,16 @@ struct CropView: View {
             .position(x: fitted.midX, y: fitted.midY)
             .allowsHitTesting(false)
 
+            if viewModel.cropPhase == .end, let direction = viewModel.scrollDirection {
+                let overlay = viewModel.cropState.overlayRect(in: fitted.size)
+                DirectionMoveArrow(direction: direction)
+                    .position(
+                        x: fitted.minX + overlay.midX,
+                        y: fitted.minY + overlay.midY
+                    )
+                    .allowsHitTesting(false)
+            }
+
             Color.clear
                 .frame(width: fitted.width, height: fitted.height)
                 .position(x: fitted.midX, y: fitted.midY)
@@ -67,13 +82,23 @@ struct CropView: View {
             Spacer()
 
             HStack {
-                transparentCircleButton(systemName: "xmark") {
+                Button {
                     viewModel.cancelCrop()
+                } label: {
+                    Image(systemName: "xmark")
                 }
+                .buttonStyle(
+                    CircleIconButtonStyle(
+                        gradient: BrandStyle.red,
+                        shadowColor: BrandStyle.redShadow,
+                        diameter: 62,
+                        iconSize: 24
+                    )
+                )
 
                 Spacer()
 
-                transparentCircleButton(systemName: "checkmark") {
+                Button {
                     if viewModel.cropPhase == .start {
                         viewModel.confirmStartPhase(
                             imageDisplayRect: imageDisplayRect,
@@ -85,7 +110,17 @@ struct CropView: View {
                             imagePixelSize: imagePixelSize
                         )
                     }
+                } label: {
+                    Image(systemName: "checkmark")
                 }
+                .buttonStyle(
+                    CircleIconButtonStyle(
+                        gradient: BrandStyle.green,
+                        shadowColor: BrandStyle.greenShadow,
+                        diameter: 62,
+                        iconSize: 24
+                    )
+                )
             }
             .padding(.horizontal, 32)
             .padding(.bottom, 40)
@@ -115,32 +150,17 @@ struct CropView: View {
             viewModel.selectScrollDirection(direction)
         } label: {
             Image(systemName: direction.systemImageName)
-                .font(.title3.bold())
-                .foregroundStyle(selected ? .white : .white.opacity(0.85))
-                .frame(width: 48, height: 48)
-                .background(
-                    Circle().fill(selected ? Color.accentColor : Color.white.opacity(0.15))
-                )
-                .overlay(
-                    Circle().stroke(.white.opacity(selected ? 0.9 : 0.35), lineWidth: selected ? 2 : 1)
-                )
         }
-        .buttonStyle(.plain)
-    }
-
-    private func transparentCircleButton(
-        systemName: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .font(.title2.bold())
-                .foregroundStyle(.white)
-                .frame(width: 56, height: 56)
-                .background(.ultraThinMaterial, in: Circle())
-                .overlay(Circle().stroke(.white.opacity(0.35), lineWidth: 1))
-        }
-        .buttonStyle(.plain)
+        .buttonStyle(
+            CircleIconButtonStyle(
+                gradient: selected ? BrandStyle.blue : BrandStyle.glass,
+                shadowColor: selected ? BrandStyle.blueShadow : .black,
+                foreground: selected ? .white : .white.opacity(0.9),
+                diameter: 50,
+                iconSize: 19,
+                strokeOpacity: selected ? 0.55 : 0.3
+            )
+        )
     }
 
     private func dragGesture(in imageRect: CGRect) -> some Gesture {
@@ -197,14 +217,18 @@ struct CropView: View {
     private func aspectFitRect(imageSize: CGSize, in containerSize: CGSize) -> CGRect {
         guard imageSize.width > 0, imageSize.height > 0 else { return .zero }
 
-        let widthRatio = containerSize.width / imageSize.width
-        let heightRatio = containerSize.height / imageSize.height
+        // Fit the photo into the region between the top controls and bottom buttons.
+        let availableHeight = max(1, containerSize.height - topReserved - bottomReserved)
+        let availableWidth = containerSize.width
+
+        let widthRatio = availableWidth / imageSize.width
+        let heightRatio = availableHeight / imageSize.height
         let scale = min(widthRatio, heightRatio)
 
         let size = CGSize(width: imageSize.width * scale, height: imageSize.height * scale)
         let origin = CGPoint(
             x: (containerSize.width - size.width) / 2,
-            y: (containerSize.height - size.height) / 2
+            y: topReserved + (availableHeight - size.height) / 2
         )
         return CGRect(origin: origin, size: size)
     }
@@ -237,6 +261,29 @@ private struct CropOverlayView: View {
                 )
                 context.fill(Path(ellipseIn: handle), with: .color(.white))
             }
+        }
+    }
+}
+
+/// Thick, semi-transparent arrow shown over the crop frame in the end phase to
+/// indicate which way the frame should be dragged.
+private struct DirectionMoveArrow: View {
+    let direction: ScrollDirection
+
+    var body: some View {
+        Image(systemName: "arrow.up")
+            .font(.system(size: 70, weight: .black))
+            .foregroundStyle(.white.opacity(0.65))
+            .shadow(color: .black.opacity(0.5), radius: 6, x: 0, y: 2)
+            .rotationEffect(rotation)
+    }
+
+    private var rotation: Angle {
+        switch direction {
+        case .up: .degrees(0)
+        case .right: .degrees(90)
+        case .down: .degrees(180)
+        case .left: .degrees(270)
         }
     }
 }

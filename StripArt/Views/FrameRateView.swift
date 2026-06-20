@@ -26,7 +26,7 @@ struct FrameRateView: View {
         VStack(spacing: 6) {
             Text("Frame Rate")
                 .font(.title2.bold())
-            Text("The maximum is a full bounce with 1-pixel steps. Lower it for fewer, larger steps — you can only decrease it.")
+            Text("The maximum is a full bounce with 1-pixel steps. Lower it for fewer, larger steps.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -82,19 +82,21 @@ struct FrameRateView: View {
                 viewModel.cancelFrameRate()
             } label: {
                 Text("Back")
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(
+                GradientButtonStyle(
+                    gradient: BrandStyle.neutral,
+                    shadowColor: .black,
+                    foreground: .primary
+                )
+            )
 
             Button {
                 viewModel.confirmFrameRate()
             } label: {
                 Label("Preview", systemImage: "play.fill")
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(GradientButtonStyle())
             .disabled(viewModel.maxFrameCount == 0)
         }
     }

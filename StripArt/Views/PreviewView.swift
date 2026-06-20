@@ -76,6 +76,7 @@ struct PreviewView: View {
 
             HStack(spacing: 8) {
                 ForEach(DitherAlgorithm.allCases) { algorithm in
+                    let selected = viewModel.ditherAlgorithm == algorithm
                     Button {
                         viewModel.selectDitherAlgorithm(algorithm)
                     } label: {
@@ -84,17 +85,34 @@ struct PreviewView: View {
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
+                            .padding(.vertical, 11)
+                            .foregroundStyle(selected ? .white : .primary)
                             .background(
-                                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .fill(
-                                        viewModel.ditherAlgorithm == algorithm
-                                            ? Color.accentColor
-                                            : Color(.secondarySystemFill)
-                                    )
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .fill(selected ? BrandStyle.blue : BrandStyle.neutral)
+                                    if selected {
+                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                            .fill(
+                                                LinearGradient(
+                                                    colors: [.white.opacity(0.28), .clear],
+                                                    startPoint: .top,
+                                                    endPoint: .center
+                                                )
+                                            )
+                                    }
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .strokeBorder(
+                                            selected ? .white.opacity(0.25) : .black.opacity(0.08),
+                                            lineWidth: 1
+                                        )
+                                }
                             )
-                            .foregroundStyle(
-                                viewModel.ditherAlgorithm == algorithm ? .white : .primary
+                            .shadow(
+                                color: (selected ? BrandStyle.blueShadow : .black).opacity(selected ? 0.35 : 0.12),
+                                radius: selected ? 8 : 4,
+                                x: 0,
+                                y: selected ? 4 : 2
                             )
                     }
                     .buttonStyle(.plain)
@@ -111,25 +129,26 @@ struct PreviewView: View {
                     viewModel.cancelPreview()
                 } label: {
                     Text("Back")
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(
+                    GradientButtonStyle(
+                        gradient: BrandStyle.neutral,
+                        shadowColor: .black,
+                        foreground: .primary
+                    )
+                )
 
                 Button {
                     Task { await viewModel.saveGIF() }
                 } label: {
-                    Group {
-                        if viewModel.isSaving {
-                            ProgressView()
-                        } else {
-                            Label("Save", systemImage: "square.and.arrow.down")
-                        }
+                    if viewModel.isSaving {
+                        ProgressView()
+                            .tint(.white)
+                    } else {
+                        Label("Save", systemImage: "square.and.arrow.down")
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(GradientButtonStyle())
                 .disabled(viewModel.isProcessing || viewModel.isReprocessingDither || viewModel.frames.isEmpty || viewModel.isSaving)
             }
 
@@ -137,10 +156,14 @@ struct PreviewView: View {
                 prepareShare()
             } label: {
                 Label("Share / Save to Files", systemImage: "square.and.arrow.up")
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(
+                GradientButtonStyle(
+                    gradient: BrandStyle.neutral,
+                    shadowColor: .black,
+                    foreground: .primary
+                )
+            )
             .disabled(viewModel.gifData == nil || viewModel.isProcessing || viewModel.isReprocessingDither)
         }
     }

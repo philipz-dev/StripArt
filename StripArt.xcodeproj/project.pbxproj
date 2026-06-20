@@ -18,6 +18,9 @@
 		A100010010 /* PreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020010 /* PreviewView.swift */; };
 		A100010017 /* FrameRateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020017 /* FrameRateView.swift */; };
 		A100010018 /* DitherAlgorithm.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020018 /* DitherAlgorithm.swift */; };
+		A100010019 /* StripArtButtonStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020019 /* StripArtButtonStyles.swift */; };
+		A100010020 /* SaveSuccessOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020020 /* SaveSuccessOverlay.swift */; };
+		A100010021 /* CameraPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020021 /* CameraPicker.swift */; };
 		A100010011 /* ImageProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020011 /* ImageProcessor.swift */; };
 		A100010012 /* GIFExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020012 /* GIFExporter.swift */; };
 		A100010013 /* PhotoLibrarySaver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020013 /* PhotoLibrarySaver.swift */; };
@@ -36,6 +39,9 @@
 		A100020010 /* PreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewView.swift; sourceTree = "<group>"; };
 		A100020017 /* FrameRateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameRateView.swift; sourceTree = "<group>"; };
 		A100020018 /* DitherAlgorithm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DitherAlgorithm.swift; sourceTree = "<group>"; };
+		A100020019 /* StripArtButtonStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StripArtButtonStyles.swift; sourceTree = "<group>"; };
+		A100020020 /* SaveSuccessOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveSuccessOverlay.swift; sourceTree = "<group>"; };
+		A100020021 /* CameraPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPicker.swift; sourceTree = "<group>"; };
 		A100020011 /* ImageProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageProcessor.swift; sourceTree = "<group>"; };
 		A100020012 /* GIFExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GIFExporter.swift; sourceTree = "<group>"; };
 		A100020013 /* PhotoLibrarySaver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLibrarySaver.swift; sourceTree = "<group>"; };
@@ -112,6 +118,9 @@
 				A100020008 /* CropView.swift */,
 				A100020010 /* PreviewView.swift */,
 				A100020017 /* FrameRateView.swift */,
+				A100020019 /* StripArtButtonStyles.swift */,
+				A100020020 /* SaveSuccessOverlay.swift */,
+				A100020021 /* CameraPicker.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -210,6 +219,9 @@
 				A100010004 /* ScrollDirection.swift in Sources */,
 				A100010005 /* AppScreen.swift in Sources */,
 				A100010018 /* DitherAlgorithm.swift in Sources */,
+				A100010019 /* StripArtButtonStyles.swift in Sources */,
+				A100010020 /* SaveSuccessOverlay.swift in Sources */,
+				A100010021 /* CameraPicker.swift in Sources */,
 				A100010006 /* StripArtViewModel.swift in Sources */,
 				A100010007 /* MainView.swift in Sources */,
 				A100010008 /* CropView.swift in Sources */,

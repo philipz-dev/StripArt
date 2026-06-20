@@ -30,7 +30,7 @@ final class StripArtViewModel: ObservableObject {
     @Published private(set) var isReprocessingDither = false
     @Published private(set) var isSaving = false
     @Published var errorMessage: String?
-    @Published var saveSuccessMessage: String?
+    @Published private(set) var showSaveConfirmation = false
 
     // MARK: - Frame rate
 
@@ -189,12 +189,21 @@ final class StripArtViewModel: ObservableObject {
         ditherAlgorithm = .floydSteinberg
         cropPhase = .start
         endCropRect = .zero
+        showSaveConfirmation = false
         selectedPhotoItem = nil
         sourceImage = nil
         screen = .main
     }
 
     // MARK: - Photo loading
+
+    func setCapturedImage(_ image: UIImage) {
+        sourceImage = image.normalizedOrientation()
+        selectedPhotoItem = nil
+        var state = cropState
+        state.reset(for: resolution.aspectRatio)
+        cropState = state
+    }
 
     func loadSelectedPhoto() async {
         guard let selectedPhotoItem else { return }
@@ -372,10 +381,16 @@ final class StripArtViewModel: ObservableObject {
 
         do {
             try await PhotoLibrarySaver.saveGIF(data)
-            returnToMain()
+            stopAnimation()
+            showSaveConfirmation = true
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    func confirmSaveSuccess() {
+        showSaveConfirmation = false
+        returnToMain()
     }
 
     // MARK: - Resolution sync

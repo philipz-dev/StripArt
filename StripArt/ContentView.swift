@@ -5,8 +5,18 @@ struct ContentView: View {
 
     var body: some View {
         NavigationStack {
-            screenContent
-                .animation(.easeInOut(duration: 0.25), value: viewModel.screen)
+            ZStack {
+                screenContent
+
+                if viewModel.showSaveConfirmation {
+                    SaveSuccessOverlay {
+                        viewModel.confirmSaveSuccess()
+                    }
+                    .transition(.opacity)
+                }
+            }
+            .animation(.easeInOut(duration: 0.25), value: viewModel.screen)
+            .animation(.easeInOut(duration: 0.25), value: viewModel.showSaveConfirmation)
         }
         .alert("Error", isPresented: errorBinding) {
             Button("OK", role: .cancel) {
@@ -14,13 +24,6 @@ struct ContentView: View {
             }
         } message: {
             Text(viewModel.errorMessage ?? "")
-        }
-        .alert("Saved", isPresented: successBinding) {
-            Button("OK", role: .cancel) {
-                viewModel.saveSuccessMessage = nil
-            }
-        } message: {
-            Text(viewModel.saveSuccessMessage ?? "")
         }
     }
 
@@ -42,13 +45,6 @@ struct ContentView: View {
         Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
-        )
-    }
-
-    private var successBinding: Binding<Bool> {
-        Binding(
-            get: { viewModel.saveSuccessMessage != nil },
-            set: { if !$0 { viewModel.saveSuccessMessage = nil } }
         )
     }
 }

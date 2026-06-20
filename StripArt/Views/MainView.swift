@@ -3,45 +3,19 @@ import SwiftUI
 
 struct MainView: View {
     @ObservedObject var viewModel: StripArtViewModel
+    @State private var showCamera = false
 
     // Shared brand gradient: light blue → deep blue.
-    private var brandGradient: LinearGradient {
-        LinearGradient(
-            colors: [
-                Color(red: 0.36, green: 0.68, blue: 1.0),
-                Color(red: 0.05, green: 0.27, blue: 0.78)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
+    private var brandGradient: LinearGradient { BrandStyle.blue }
 
     var body: some View {
         ZStack {
             background
 
-            VStack(spacing: 0) {
-                ScrollView {
-                    VStack(spacing: 28) {
-                        logo
-                            .padding(.top, 8)
-
-                        header
-
-                        resolutionSection
-
-                        photoSection
-                    }
-                    .padding(24)
-                }
-
-                if viewModel.sourceImage != nil {
-                    decisionButtons
-                        .padding(.horizontal, 24)
-                        .padding(.top, 12)
-                        .padding(.bottom, 16)
-                        .background(.ultraThinMaterial)
-                }
+            if viewModel.sourceImage != nil {
+                photoReview
+            } else {
+                setupContent
             }
         }
         .navigationTitle("")
@@ -52,6 +26,60 @@ struct MainView: View {
         }
         .onChange(of: viewModel.heightText) { viewModel.syncResolutionFromText() }
         .onChange(of: viewModel.widthText) { viewModel.syncResolutionFromText() }
+        .fullScreenCover(isPresented: $showCamera) {
+            CameraPicker { image in
+                viewModel.setCapturedImage(image)
+            }
+            .ignoresSafeArea()
+        }
+    }
+
+    // MARK: - Setup (no photo yet)
+
+    private var setupContent: some View {
+        ScrollView {
+            VStack(spacing: 28) {
+                logo
+                    .padding(.top, 8)
+
+                header
+
+                resolutionSection
+
+                photoSection
+            }
+            .padding(24)
+        }
+    }
+
+    // MARK: - Photo review (photo selected)
+
+    private var photoReview: some View {
+        VStack(spacing: 24) {
+            logo
+                .padding(.top, 8)
+
+            if let image = viewModel.sourceImage {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color.black)
+                    .aspectRatio(image.size.width / max(image.size.height, 1), contentMode: .fit)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .overlay(
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFit()
+                            .padding(6)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .strokeBorder(.white.opacity(0.15), lineWidth: 1)
+                    )
+                    .shadow(color: .black.opacity(0.2), radius: 14, x: 0, y: 8)
+            }
+
+            decisionButtons
+        }
+        .padding(24)
     }
 
     // MARK: - Background
@@ -109,72 +137,18 @@ struct MainView: View {
     // MARK: - Header
 
     private var header: some View {
-        VStack(spacing: 14) {
-            ledIcon
-
+        VStack(spacing: 6) {
             Text("LED Strip Animator")
                 .font(.system(.title2, design: .rounded).weight(.bold))
                 .foregroundStyle(.primary)
-
-            Text("Set LED bar resolution and pick a photo")
-                .font(.subheadline)
-                .foregroundStyle(.secondary.opacity(0.8))
-                .multilineTextAlignment(.center)
         }
-    }
-
-    // High-fidelity 3D-style icon with a soft LED bar illustration.
-    private var ledIcon: some View {
-        RoundedRectangle(cornerRadius: 22, style: .continuous)
-            .fill(brandGradient)
-            .frame(width: 88, height: 88)
-            .overlay(
-                // Glossy top highlight for a 3D feel.
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [.white.opacity(0.45), .clear],
-                            startPoint: .top,
-                            endPoint: .center
-                        )
-                    )
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .strokeBorder(.white.opacity(0.35), lineWidth: 1)
-            )
-            .overlay(ledBarIllustration)
-            .shadow(color: Color(red: 0.1, green: 0.3, blue: 0.7).opacity(0.35), radius: 14, x: 0, y: 8)
-    }
-
-    private var ledBarIllustration: some View {
-        RoundedRectangle(cornerRadius: 7, style: .continuous)
-            .fill(Color(red: 0.06, green: 0.12, blue: 0.28))
-            .frame(width: 60, height: 26)
-            .overlay(
-                HStack(spacing: 3) {
-                    ForEach(0..<7, id: \.self) { index in
-                        Circle()
-                            .fill(.white)
-                            .overlay(Circle().fill(.white).blur(radius: 1.5))
-                            .opacity(index % 2 == 0 ? 1.0 : 0.55)
-                            .shadow(color: .white.opacity(0.8), radius: 2)
-                    }
-                }
-                .padding(.horizontal, 6)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .strokeBorder(.white.opacity(0.2), lineWidth: 1)
-            )
     }
 
     // MARK: - Resolution
 
     private var resolutionSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Resolution (height × width)")
-                .font(.system(.headline, design: .rounded))
+            stepHeader(number: "1", title: "Set LED bar resolution")
 
             HStack(spacing: 16) {
                 resolutionField(title: "Height", text: $viewModel.heightText)
@@ -194,18 +168,8 @@ struct MainView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .padding(20)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(
-                    .white.shadow(.inner(color: .black.opacity(0.06), radius: 4, x: 0, y: 2))
-                )
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .strokeBorder(.white.opacity(0.8), lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.08), radius: 18, x: 0, y: 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardStyle()
     }
 
     private func resolutionField(title: String, text: Binding<String>) -> some View {
@@ -233,31 +197,52 @@ struct MainView: View {
     // MARK: - Photo
 
     private var photoSection: some View {
-        VStack(spacing: 16) {
-            if let image = viewModel.sourceImage {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxHeight: 220)
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .shadow(color: .black.opacity(0.12), radius: 12, x: 0, y: 6)
-            }
+        VStack(alignment: .leading, spacing: 16) {
+            stepHeader(number: "2", title: "Import or take a photo")
 
-            PhotosPicker(
-                selection: $viewModel.selectedPhotoItem,
-                matching: .images,
-                photoLibrary: .shared()
-            ) {
-                Label(
-                    viewModel.sourceImage == nil ? "Choose Photo" : "Choose Different Photo",
-                    systemImage: "photo.badge.plus.fill"
-                )
-                .font(.system(.headline, design: .rounded))
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 15)
-                .background(gradientButtonBackground)
+            HStack(spacing: 14) {
+                PhotosPicker(
+                    selection: $viewModel.selectedPhotoItem,
+                    matching: .images,
+                    photoLibrary: .shared()
+                ) {
+                    photoActionLabel(title: "Import Photo", systemImage: "photo.on.rectangle")
+                }
+
+                Button {
+                    showCamera = true
+                } label: {
+                    photoActionLabel(title: "Take Photo", systemImage: "camera.fill")
+                }
             }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardStyle()
+    }
+
+    private func photoActionLabel(title: String, systemImage: String) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: systemImage)
+                .font(.title3)
+            Text(title)
+                .font(.system(.subheadline, design: .rounded).weight(.semibold))
+        }
+        .foregroundStyle(.white)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 18)
+        .background(gradientButtonBackground)
+    }
+
+    private func stepHeader(number: String, title: String) -> some View {
+        HStack(spacing: 10) {
+            Text(number)
+                .font(.system(.subheadline, design: .rounded).weight(.bold))
+                .foregroundStyle(.white)
+                .frame(width: 26, height: 26)
+                .background(Circle().fill(brandGradient))
+            Text(title)
+                .font(.system(.headline, design: .rounded))
+                .foregroundStyle(.primary)
         }
     }
 
@@ -269,48 +254,30 @@ struct MainView: View {
                 viewModel.clearSelectedPhoto()
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 26, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 66, height: 66)
-                    .background(
-                        Circle()
-                            .fill(
-                                LinearGradient(
-                                    colors: [
-                                        Color(red: 0.95, green: 0.42, blue: 0.42),
-                                        Color(red: 0.82, green: 0.18, blue: 0.24)
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .shadow(color: Color(red: 0.7, green: 0.1, blue: 0.15).opacity(0.4), radius: 12, x: 0, y: 6)
-                    )
             }
+            .buttonStyle(
+                CircleIconButtonStyle(
+                    gradient: BrandStyle.red,
+                    shadowColor: BrandStyle.redShadow,
+                    diameter: 72,
+                    iconSize: 27
+                )
+            )
 
             Button {
                 viewModel.goToCrop()
             } label: {
                 Image(systemName: "checkmark")
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 78, height: 78)
-                    .background(
-                        Circle()
-                            .fill(
-                                LinearGradient(
-                                    colors: [
-                                        Color(red: 0.30, green: 0.78, blue: 0.50),
-                                        Color(red: 0.10, green: 0.55, blue: 0.32)
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .shadow(color: Color(red: 0.1, green: 0.45, blue: 0.25).opacity(0.45), radius: 14, x: 0, y: 7)
-                    )
-                    .opacity(viewModel.canProceedFromMain ? 1 : 0.45)
             }
+            .buttonStyle(
+                CircleIconButtonStyle(
+                    gradient: BrandStyle.green,
+                    shadowColor: BrandStyle.greenShadow,
+                    diameter: 72,
+                    iconSize: 27
+                )
+            )
+            .opacity(viewModel.canProceedFromMain ? 1 : 0.45)
             .disabled(!viewModel.canProceedFromMain)
         }
         .frame(maxWidth: .infinity)
@@ -329,6 +296,36 @@ struct MainView: View {
                         )
                     )
             )
-            .shadow(color: Color(red: 0.1, green: 0.3, blue: 0.7).opacity(0.4), radius: 12, x: 0, y: 6)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(.white.opacity(0.25), lineWidth: 1)
+            )
+            .shadow(color: BrandStyle.blueShadow.opacity(0.4), radius: 12, x: 0, y: 6)
+    }
+}
+
+// MARK: - Shared white card styling
+
+private struct CardStyle: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(
+                        .white.shadow(.inner(color: .black.opacity(0.06), radius: 4, x: 0, y: 2))
+                    )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .strokeBorder(.white.opacity(0.8), lineWidth: 1)
+            )
+            .shadow(color: .black.opacity(0.08), radius: 18, x: 0, y: 10)
+    }
+}
+
+private extension View {
+    func cardStyle() -> some View {
+        modifier(CardStyle())
     }
 }

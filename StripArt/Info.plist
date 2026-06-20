@@ -22,6 +22,8 @@
 	<string>1</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>StripArt needs camera access to take photos for LED strip animations.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>StripArt needs access to save animated GIFs to your photo library.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

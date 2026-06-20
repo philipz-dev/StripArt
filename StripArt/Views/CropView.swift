@@ -7,11 +7,14 @@ struct CropView: View {
     @State private var imagePixelSize: CGSize = .zero
     @State private var dragStartCenter: CGPoint?
     @State private var pinchStartScale: CGFloat?
+    @State private var scaleStart: (scale: CGFloat, distance: CGFloat)?
 
     /// Vertical space reserved for the top controls and bottom action buttons,
     /// so the photo never sits underneath them.
     private let topReserved: CGFloat = 150
     private let bottomReserved: CGFloat = 130
+
+    private let cropSpace = "cropArea"
 
     var body: some View {
         GeometryReader { geometry in
@@ -24,6 +27,7 @@ struct CropView: View {
 
                 overlayControls
             }
+            .coordinateSpace(name: cropSpace)
         }
         .navigationBarHidden(true)
     }
@@ -62,6 +66,16 @@ struct CropView: View {
                 .contentShape(Rectangle())
                 .gesture(dragGesture(in: fitted))
                 .simultaneousGesture(pinchGesture(in: fitted))
+
+            // Corner handles for resizing (start phase only).
+            if viewModel.cropPhase == .start {
+                let overlay = viewModel.cropState.overlayRect(in: fitted.size)
+                ForEach(Array(corners(of: overlay).enumerated()), id: \.offset) { _, corner in
+                    cornerHandle
+                        .position(x: fitted.minX + corner.x, y: fitted.minY + corner.y)
+                        .gesture(scaleGesture(in: fitted))
+                }
+            }
         }
         .onAppear {
             updateLayout(image: image, containerSize: containerSize)
@@ -163,6 +177,15 @@ struct CropView: View {
         )
     }
 
+    private var cornerHandle: some View {
+        Circle()
+            .fill(.white)
+            .frame(width: 18, height: 18)
+            .overlay(Circle().strokeBorder(BrandStyle.blue, lineWidth: 2.5))
+            .shadow(color: .black.opacity(0.4), radius: 3, x: 0, y: 1)
+            .contentShape(Circle().inset(by: -18))
+    }
+
     private func dragGesture(in imageRect: CGRect) -> some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
@@ -170,7 +193,6 @@ struct CropView: View {
                     dragStartCenter = viewModel.cropState.center
                 }
                 guard let start = dragStartCenter else { return }
-
                 let dx = value.translation.width / imageRect.width
                 let dy = value.translation.height / imageRect.height
                 let proposed = CGPoint(x: start.x + dx, y: start.y + dy)
@@ -183,6 +205,49 @@ struct CropView: View {
             .onEnded { _ in
                 dragStartCenter = nil
             }
+    }
+
+    /// Resizes the selection by dragging a corner, scaling from the center.
+    /// Coordinates are in the shared `cropArea` space, matching the handle positions.
+    private func scaleGesture(in imageRect: CGRect) -> some Gesture {
+        DragGesture(minimumDistance: 0, coordinateSpace: .named(cropSpace))
+            .onChanged { value in
+                let overlay = viewModel.cropState.overlayRect(in: imageRect.size)
+                let center = CGPoint(
+                    x: imageRect.minX + overlay.midX,
+                    y: imageRect.minY + overlay.midY
+                )
+
+                if scaleStart == nil {
+                    scaleStart = (
+                        viewModel.cropState.scale,
+                        max(1, distance(value.startLocation, center))
+                    )
+                }
+                guard let scaleStart else { return }
+
+                let newDistance = distance(value.location, center)
+                let factor = newDistance / scaleStart.distance
+                viewModel.mutateCropState(in: imageRect.size) { state in
+                    state.scale = min(max(scaleStart.scale * factor, 0.15), 1.0)
+                }
+            }
+            .onEnded { _ in
+                scaleStart = nil
+            }
+    }
+
+    private func corners(of rect: CGRect) -> [CGPoint] {
+        [
+            CGPoint(x: rect.minX, y: rect.minY),
+            CGPoint(x: rect.maxX, y: rect.minY),
+            CGPoint(x: rect.minX, y: rect.maxY),
+            CGPoint(x: rect.maxX, y: rect.maxY)
+        ]
+    }
+
+    private func distance(_ a: CGPoint, _ b: CGPoint) -> CGFloat {
+        hypot(a.x - b.x, a.y - b.y)
     }
 
     private func pinchGesture(in imageRect: CGRect) -> some Gesture {
@@ -245,22 +310,6 @@ private struct CropOverlayView: View {
 
             let border = Path(overlayRect)
             context.stroke(border, with: .color(.white), lineWidth: 2)
-
-            let handleSize: CGFloat = 10
-            for corner in [
-                CGPoint(x: overlayRect.minX, y: overlayRect.minY),
-                CGPoint(x: overlayRect.maxX, y: overlayRect.minY),
-                CGPoint(x: overlayRect.minX, y: overlayRect.maxY),
-                CGPoint(x: overlayRect.maxX, y: overlayRect.maxY)
-            ] {
-                let handle = CGRect(
-                    x: corner.x - handleSize / 2,
-                    y: corner.y - handleSize / 2,
-                    width: handleSize,
-                    height: handleSize
-                )
-                context.fill(Path(ellipseIn: handle), with: .color(.white))
-            }
         }
     }
 }

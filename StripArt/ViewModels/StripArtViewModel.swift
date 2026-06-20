@@ -75,8 +75,8 @@ final class StripArtViewModel: ObservableObject {
     }
 
     func goToCrop() {
+        normalizeResolutionText()
         guard canProceedFromMain else { return }
-        syncResolutionFromText()
         var state = cropState
         state.reset(for: resolution.aspectRatio)
         cropState = state
@@ -395,7 +395,24 @@ final class StripArtViewModel: ObservableObject {
 
     // MARK: - Resolution sync
 
+    /// Updates the resolution from the live text fields without forcing the text
+    /// back, so a field can be cleared and retyped. Empty input maps to 0 (invalid).
     func syncResolutionFromText() {
+        let height = Int(heightText.filter(\.isNumber)) ?? 0
+        let width = Int(widthText.filter(\.isNumber)) ?? 0
+        resolution = LEDResolution(
+            height: min(256, height),
+            width: min(512, width)
+        )
+        if resolution.isValid {
+            var state = cropState
+            state.aspectRatio = resolution.aspectRatio
+            cropState = state
+        }
+    }
+
+    /// Normalizes the text fields to the clamped values once editing finishes.
+    func normalizeResolutionText() {
         let height = Int(heightText.filter(\.isNumber)) ?? LEDResolution.default.height
         let width = Int(widthText.filter(\.isNumber)) ?? LEDResolution.default.width
         resolution = LEDResolution(

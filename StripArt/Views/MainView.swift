@@ -4,6 +4,12 @@ import SwiftUI
 struct MainView: View {
     @ObservedObject var viewModel: StripArtViewModel
     @State private var showCamera = false
+    @FocusState private var focusedField: ResolutionField?
+
+    private enum ResolutionField {
+        case height
+        case width
+    }
 
     // Shared brand gradient: light blue → deep blue.
     private var brandGradient: LinearGradient { BrandStyle.blue }
@@ -26,6 +32,15 @@ struct MainView: View {
         }
         .onChange(of: viewModel.heightText) { viewModel.syncResolutionFromText() }
         .onChange(of: viewModel.widthText) { viewModel.syncResolutionFromText() }
+        .onChange(of: focusedField) { _, newValue in
+            if newValue == nil { viewModel.normalizeResolutionText() }
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") { focusedField = nil }
+            }
+        }
         .fullScreenCover(isPresented: $showCamera) {
             CameraPicker { image in
                 viewModel.setCapturedImage(image)
@@ -151,11 +166,11 @@ struct MainView: View {
             stepHeader(number: "1", title: "Set LED bar resolution")
 
             HStack(spacing: 16) {
-                resolutionField(title: "Height", text: $viewModel.heightText)
+                resolutionField(title: "Height", text: $viewModel.heightText, field: .height)
                 Text("×")
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(.secondary)
-                resolutionField(title: "Width", text: $viewModel.widthText)
+                resolutionField(title: "Width", text: $viewModel.widthText, field: .width)
             }
 
             if !viewModel.resolutionIsValid {
@@ -172,13 +187,14 @@ struct MainView: View {
         .cardStyle()
     }
 
-    private func resolutionField(title: String, text: Binding<String>) -> some View {
+    private func resolutionField(title: String, text: Binding<String>, field: ResolutionField) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.secondary)
             TextField(title, text: text)
                 .keyboardType(.numberPad)
+                .focused($focusedField, equals: field)
                 .multilineTextAlignment(.center)
                 .font(.title3.weight(.semibold))
                 .padding(.vertical, 12)

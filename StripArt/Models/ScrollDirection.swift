@@ -10,10 +10,10 @@ enum ScrollDirection: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .left: "Links"
-        case .right: "Rechts"
-        case .up: "Boven"
-        case .down: "Onder"
+        case .left: "Left"
+        case .right: "Right"
+        case .up: "Up"
+        case .down: "Down"
         }
     }
 

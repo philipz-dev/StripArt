@@ -9,11 +9,11 @@ struct DirectionPickerView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 24) {
-                Text("Scroll-richting")
+                Text("Scroll Direction")
                     .font(.title2.bold())
                     .foregroundStyle(.white)
 
-                Text("Kies de richting waarin het beeld door het LED-venster scrollt.")
+                Text("Choose the direction the image scrolls through the LED window.")
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.8))
                     .multilineTextAlignment(.center)
@@ -21,7 +21,7 @@ struct DirectionPickerView: View {
 
                 directionPad
 
-                Button("Annuleren") {
+                Button("Cancel") {
                     viewModel.cancelDirection()
                 }
                 .foregroundStyle(.white.opacity(0.85))

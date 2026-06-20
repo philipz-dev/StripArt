@@ -15,7 +15,7 @@ struct MainView: View {
             Spacer()
 
             Button(action: viewModel.goToCrop) {
-                Label("Doorgaan", systemImage: "arrow.right.circle.fill")
+                Label("Continue", systemImage: "arrow.right.circle.fill")
                     .font(.headline)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
@@ -39,7 +39,7 @@ struct MainView: View {
                 .foregroundStyle(.tint)
             Text("LED Strip Animator")
                 .font(.title2.bold())
-            Text("Kies een foto en stel de resolutie van je LED-bar in.")
+            Text("Choose a photo and set your LED bar resolution.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -48,19 +48,19 @@ struct MainView: View {
 
     private var resolutionSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Resolutie (hoogte × breedte)")
+            Text("Resolution (height × width)")
                 .font(.headline)
 
             HStack(spacing: 16) {
-                resolutionField(title: "Hoogte", text: $viewModel.heightText)
+                resolutionField(title: "Height", text: $viewModel.heightText)
                 Text("×")
                     .font(.title2)
                     .foregroundStyle(.secondary)
-                resolutionField(title: "Breedte", text: $viewModel.widthText)
+                resolutionField(title: "Width", text: $viewModel.widthText)
             }
 
             if !viewModel.resolutionIsValid {
-                Text("Voer geldige waarden in (1–256 hoogte, 1–512 breedte).")
+                Text("Enter valid values (1–256 height, 1–512 width).")
                     .font(.caption)
                     .foregroundStyle(.red)
             } else {
@@ -100,7 +100,7 @@ struct MainView: View {
                 photoLibrary: .shared()
             ) {
                 Label(
-                    viewModel.sourceImage == nil ? "Foto kiezen" : "Andere foto kiezen",
+                    viewModel.sourceImage == nil ? "Choose Photo" : "Choose Different Photo",
                     systemImage: "photo.on.rectangle"
                 )
                 .frame(maxWidth: .infinity)

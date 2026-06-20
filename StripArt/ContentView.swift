@@ -15,14 +15,14 @@ struct ContentView: View {
             }
             .animation(.easeInOut(duration: 0.25), value: viewModel.screen)
         }
-        .alert("Fout", isPresented: errorBinding) {
+        .alert("Error", isPresented: errorBinding) {
             Button("OK", role: .cancel) {
                 viewModel.errorMessage = nil
             }
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
-        .alert("Opgeslagen", isPresented: successBinding) {
+        .alert("Saved", isPresented: successBinding) {
             Button("OK", role: .cancel) {
                 viewModel.saveSuccessMessage = nil
             }

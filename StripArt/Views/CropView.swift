@@ -32,15 +32,21 @@ struct CropView: View {
                 .resizable()
                 .frame(width: fitted.width, height: fitted.height)
                 .position(x: fitted.midX, y: fitted.midY)
+                .allowsHitTesting(false)
 
             CropOverlayView(
-                overlayRect: viewModel.cropState.overlayRect(in: fitted.size),
-                imageRect: fitted
+                overlayRect: viewModel.cropState.overlayRect(in: fitted.size)
             )
             .frame(width: fitted.width, height: fitted.height)
             .position(x: fitted.midX, y: fitted.midY)
-            .gesture(dragGesture(in: fitted))
-            .simultaneousGesture(pinchGesture(in: fitted))
+            .allowsHitTesting(false)
+
+            Color.clear
+                .frame(width: fitted.width, height: fitted.height)
+                .position(x: fitted.midX, y: fitted.midY)
+                .contentShape(Rectangle())
+                .gesture(dragGesture(in: fitted))
+                .simultaneousGesture(pinchGesture(in: fitted))
         }
         .onAppear {
             updateLayout(image: image, containerSize: containerSize)
@@ -92,7 +98,7 @@ struct CropView: View {
     }
 
     private func dragGesture(in imageRect: CGRect) -> some Gesture {
-        DragGesture()
+        DragGesture(minimumDistance: 0)
             .onChanged { value in
                 if dragStartCenter == nil {
                     dragStartCenter = viewModel.cropState.center
@@ -101,11 +107,12 @@ struct CropView: View {
 
                 let dx = value.translation.width / imageRect.width
                 let dy = value.translation.height / imageRect.height
-                viewModel.cropState.center = CGPoint(
-                    x: start.x + dx,
-                    y: start.y + dy
-                )
-                viewModel.cropState.clamp(in: imageRect.size)
+                viewModel.mutateCropState(in: imageRect.size) { state in
+                    state.center = CGPoint(
+                        x: start.x + dx,
+                        y: start.y + dy
+                    )
+                }
             }
             .onEnded { _ in
                 dragStartCenter = nil
@@ -119,8 +126,9 @@ struct CropView: View {
                     pinchStartScale = viewModel.cropState.scale
                 }
                 guard let start = pinchStartScale else { return }
-                viewModel.cropState.scale = min(max(start * value, 0.15), 1.0)
-                viewModel.cropState.clamp(in: imageRect.size)
+                viewModel.mutateCropState(in: imageRect.size) { state in
+                    state.scale = min(max(start * value, 0.15), 1.0)
+                }
             }
             .onEnded { _ in
                 pinchStartScale = nil
@@ -130,8 +138,12 @@ struct CropView: View {
     private func updateLayout(image: UIImage, containerSize: CGSize) {
         let fitted = aspectFitRect(imageSize: image.size, in: containerSize)
         imageDisplayRect = fitted
-        imagePixelSize = image.size
-        viewModel.cropState.clamp(in: fitted.size)
+        if let cgImage = image.cgImage {
+            imagePixelSize = CGSize(width: cgImage.width, height: cgImage.height)
+        } else {
+            imagePixelSize = image.size
+        }
+        viewModel.clampCropState(in: fitted.size)
     }
 
     private func aspectFitRect(imageSize: CGSize, in containerSize: CGSize) -> CGRect {
@@ -152,7 +164,6 @@ struct CropView: View {
 
 private struct CropOverlayView: View {
     let overlayRect: CGRect
-    let imageRect: CGRect
 
     var body: some View {
         Canvas { context, size in
@@ -160,7 +171,7 @@ private struct CropOverlayView: View {
             path.addRect(overlayRect)
             context.fill(path, with: .color(.black.opacity(0.45)), style: FillStyle(eoFill: true))
 
-            var border = Path(overlayRect)
+            let border = Path(overlayRect)
             context.stroke(border, with: .color(.white), lineWidth: 2)
 
             let handleSize: CGFloat = 10
@@ -179,6 +190,5 @@ private struct CropOverlayView: View {
                 context.fill(Path(ellipseIn: handle), with: .color(.white))
             }
         }
-        .allowsHitTesting(false)
     }
 }

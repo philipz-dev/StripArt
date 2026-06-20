@@ -11,7 +11,7 @@ struct PreviewView: View {
             previewArea
 
             if let direction = viewModel.scrollDirection {
-                Text("Richting: \(direction.label) · \(viewModel.resolution.height)×\(viewModel.resolution.width) px")
+                Text("Direction: \(direction.label) · \(viewModel.resolution.height)×\(viewModel.resolution.width) px")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -30,9 +30,9 @@ struct PreviewView: View {
 
     private var header: some View {
         VStack(spacing: 6) {
-            Text("Dithered animatie")
+            Text("Dithered Animation")
                 .font(.title2.bold())
-            Text("Pixel-perfect preview op LED-resolutie")
+            Text("Pixel-perfect preview at LED resolution")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
@@ -51,7 +51,7 @@ struct PreviewView: View {
                 )
 
             if viewModel.isProcessing {
-                ProgressView("Verwerken…")
+                ProgressView("Processing…")
                     .tint(.white)
                     .foregroundStyle(.white)
             } else if !viewModel.frames.isEmpty {
@@ -73,7 +73,7 @@ struct PreviewView: View {
                 Button(role: .cancel) {
                     viewModel.cancelPreview()
                 } label: {
-                    Text("Cancelen")
+                    Text("Cancel")
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
                 }
@@ -86,7 +86,7 @@ struct PreviewView: View {
                         if viewModel.isSaving {
                             ProgressView()
                         } else {
-                            Label("Saven", systemImage: "square.and.arrow.down")
+                            Label("Save", systemImage: "square.and.arrow.down")
                         }
                     }
                     .frame(maxWidth: .infinity)
@@ -99,7 +99,7 @@ struct PreviewView: View {
             Button {
                 prepareShare()
             } label: {
-                Label("Delen / Opslaan in Bestanden", systemImage: "square.and.arrow.up")
+                Label("Share / Save to Files", systemImage: "square.and.arrow.up")
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
             }
@@ -116,7 +116,7 @@ struct PreviewView: View {
             try data.write(to: url)
             shareItem = ShareGIFItem(url: url)
         } catch {
-            viewModel.errorMessage = "Bestand kon niet worden voorbereid."
+            viewModel.errorMessage = "Could not prepare the file."
         }
     }
 }

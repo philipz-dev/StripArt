@@ -1,4 +1,5 @@
 import Combine
+import ImageIO
 import PhotosUI
 import SwiftUI
 import UIKit
@@ -30,6 +31,7 @@ final class StripArtViewModel: ObservableObject {
 
     @Published private(set) var currentFrameIndex = 0
     private var animationTask: Task<Void, Never>?
+    private var cgFrames: [CGImage] = []
 
     private var confirmedCropRect: CGRect = .zero
 
@@ -46,7 +48,9 @@ final class StripArtViewModel: ObservableObject {
     func goToCrop() {
         guard canProceedFromMain else { return }
         syncResolutionFromText()
-        cropState.reset(for: resolution.aspectRatio)
+        var state = cropState
+        state.reset(for: resolution.aspectRatio)
+        cropState = state
         screen = .crop
     }
 
@@ -55,10 +59,15 @@ final class StripArtViewModel: ObservableObject {
     }
 
     func confirmCrop(imageDisplayRect: CGRect, imagePixelSize: CGSize) {
-        confirmedCropRect = cropState.cropRectInImageCoordinates(
+        let cropRect = cropState.cropRectInImageCoordinates(
             imageDisplayRect: imageDisplayRect,
             imagePixelSize: imagePixelSize
         )
+        guard cropRect.width > 1, cropRect.height > 1 else {
+            errorMessage = "Invalid selection. Please try again."
+            return
+        }
+        confirmedCropRect = cropRect
         screen = .direction
     }
 
@@ -75,6 +84,7 @@ final class StripArtViewModel: ObservableObject {
     func cancelPreview() {
         stopAnimation()
         frames = []
+        cgFrames = []
         gifData = nil
         scrollDirection = nil
         screen = .main
@@ -88,13 +98,18 @@ final class StripArtViewModel: ObservableObject {
         guard let selectedPhotoItem else { return }
 
         do {
-            if let data = try await selectedPhotoItem.loadTransferable(type: Data.self),
-               let image = UIImage(data: data) {
-                sourceImage = image.normalizedOrientation()
-                cropState.reset(for: resolution.aspectRatio)
+            if let data = try await selectedPhotoItem.loadTransferable(type: Data.self) {
+                let image = UIImage.downsampled(from: data, maxPixelSize: 2048)
+                    ?? UIImage(data: data)
+                if let image {
+                    sourceImage = image.normalizedOrientation()
+                    var state = cropState
+                    state.reset(for: resolution.aspectRatio)
+                    cropState = state
+                }
             }
         } catch {
-            errorMessage = "Foto laden mislukt."
+            errorMessage = "Failed to load photo."
         }
     }
 
@@ -105,6 +120,7 @@ final class StripArtViewModel: ObservableObject {
 
         isProcessing = true
         frames = []
+        cgFrames = []
         gifData = nil
         stopAnimation()
 
@@ -113,21 +129,23 @@ final class StripArtViewModel: ObservableObject {
         let processor = ImageProcessor()
 
         Task {
-            let generated = await Task.detached(priority: .userInitiated) {
-                processor.generateScrollAnimation(
+            let result = await Task.detached(priority: .userInitiated) {
+                let generated = processor.generateScrollAnimation(
                     from: sourceImage,
                     cropRect: cropRect,
                     resolution: resolution,
                     direction: direction
                 )
+                let uiFrames = generated.map { UIImage(cgImage: $0) }
+                return (generated, uiFrames)
             }.value
 
-            frames = generated.compactMap { UIImage(cgImage: $0) }
-            gifData = GIFExporter.makeGIF(from: generated)
+            cgFrames = result.0
+            frames = result.1
             isProcessing = false
 
             if frames.isEmpty {
-                errorMessage = "Animatie kon niet worden gegenereerd."
+                errorMessage = "Could not generate animation."
             } else {
                 startAnimation()
             }
@@ -158,20 +176,26 @@ final class StripArtViewModel: ObservableObject {
     // MARK: - Save
 
     func saveGIF() async {
-        guard !frames.isEmpty else { return }
+        guard !cgFrames.isEmpty else { return }
 
         isSaving = true
         defer { isSaving = false }
 
-        let cgFrames = frames.compactMap(\.cgImage)
-        guard let data = gifData ?? GIFExporter.makeGIF(from: cgFrames) else {
-            errorMessage = "GIF export mislukt."
+        let framesToExport = cgFrames
+        let data = await Task.detached(priority: .userInitiated) {
+            GIFExporter.makeGIF(from: framesToExport)
+        }.value
+
+        guard let data else {
+            errorMessage = "GIF export failed."
             return
         }
 
+        gifData = data
+
         do {
             try await PhotoLibrarySaver.saveGIF(data)
-            saveSuccessMessage = "GIF opgeslagen in Fotobibliotheek."
+            saveSuccessMessage = "GIF saved to Photo Library."
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -188,7 +212,22 @@ final class StripArtViewModel: ObservableObject {
         )
         heightText = String(resolution.height)
         widthText = String(resolution.width)
-        cropState.aspectRatio = resolution.aspectRatio
+        var state = cropState
+        state.aspectRatio = resolution.aspectRatio
+        cropState = state
+    }
+
+    func mutateCropState(in containerSize: CGSize, _ mutate: (inout CropOverlayState) -> Void) {
+        var state = cropState
+        mutate(&state)
+        state.clamp(in: containerSize)
+        cropState = state
+    }
+
+    func clampCropState(in containerSize: CGSize) {
+        var state = cropState
+        state.clamp(in: containerSize)
+        cropState = state
     }
 }
 
@@ -252,12 +291,16 @@ struct CropOverlayState {
         imageDisplayRect: CGRect,
         imagePixelSize: CGSize
     ) -> CGRect {
-        let overlay = overlayRect(in: imageDisplayRect.size)
+        let displaySize = imageDisplayRect.size
+        guard displaySize.width > 0, displaySize.height > 0 else { return .zero }
+
+        // Overlay is expressed in local image-view coordinates (origin 0,0).
+        let overlay = overlayRect(in: displaySize)
         let relative = CGRect(
-            x: (overlay.minX - imageDisplayRect.minX) / imageDisplayRect.width,
-            y: (overlay.minY - imageDisplayRect.minY) / imageDisplayRect.height,
-            width: overlay.width / imageDisplayRect.width,
-            height: overlay.height / imageDisplayRect.height
+            x: overlay.minX / displaySize.width,
+            y: overlay.minY / displaySize.height,
+            width: overlay.width / displaySize.width,
+            height: overlay.height / displaySize.height
         )
 
         let pixelRect = CGRect(
@@ -276,6 +319,21 @@ struct CropOverlayState {
 // MARK: - UIImage helpers
 
 private extension UIImage {
+    static func downsampled(from data: Data, maxPixelSize: Int) -> UIImage? {
+        let options: [CFString: Any] = [
+            kCGImageSourceShouldCache: false,
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixelSize
+        ]
+
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
+            return nil
+        }
+        return UIImage(cgImage: cgImage)
+    }
+
     func normalizedOrientation() -> UIImage {
         guard imageOrientation != .up else { return self }
         let format = UIGraphicsImageRendererFormat.default()

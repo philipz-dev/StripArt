@@ -23,9 +23,9 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>StripArt heeft toegang nodig om geanimeerde GIFs op te slaan in je fotobibliotheek.</string>
+	<string>StripArt needs access to save animated GIFs to your photo library.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>StripArt heeft toegang nodig om foto's te kiezen voor LED-strip animaties.</string>
+	<string>StripArt needs access to choose photos for LED strip animations.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -11,11 +11,11 @@ enum PhotoLibrarySaver {
         var errorDescription: String? {
             switch self {
             case .unauthorized:
-                "Geen toegang tot de fotobibliotheek."
+                "No access to the photo library."
             case .exportFailed:
-                "GIF kon niet worden aangemaakt."
+                "Could not create GIF."
             case .saveFailed(let error):
-                "Opslaan mislukt: \(error.localizedDescription)"
+                "Save failed: \(error.localizedDescription)"
             }
         }
     }

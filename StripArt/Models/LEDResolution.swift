@@ -34,4 +34,28 @@ struct LEDResolution: Equatable, Hashable {
     var pixelCount: Int {
         height * width
     }
+
+    // MARK: - Persistence
+
+    private enum Storage {
+        static let heightKey = "savedLEDHeight"
+        static let widthKey = "savedLEDWidth"
+    }
+
+    static func loadSaved() -> LEDResolution? {
+        let defaults = UserDefaults.standard
+        guard defaults.object(forKey: Storage.heightKey) != nil else { return nil }
+        let resolution = LEDResolution(
+            height: defaults.integer(forKey: Storage.heightKey),
+            width: defaults.integer(forKey: Storage.widthKey)
+        )
+        return resolution.isValid ? resolution : nil
+    }
+
+    func save() {
+        guard isValid else { return }
+        let defaults = UserDefaults.standard
+        defaults.set(height, forKey: Storage.heightKey)
+        defaults.set(width, forKey: Storage.widthKey)
+    }
 }

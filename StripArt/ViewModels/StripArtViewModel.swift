@@ -10,8 +10,8 @@ final class StripArtViewModel: ObservableObject {
     // MARK: - Input state
 
     @Published var resolution = LEDResolution.default
-    @Published var heightText = "16"
-    @Published var widthText = "96"
+    @Published var heightText: String
+    @Published var widthText: String
     @Published var selectedPhotoItem: PhotosPickerItem?
     @Published var sourceImage: UIImage?
     @Published var cropState = CropOverlayState()
@@ -42,6 +42,14 @@ final class StripArtViewModel: ObservableObject {
 
     /// Smallest meaningful animation length.
     let minFrameCount = 2
+
+    init() {
+        let saved = LEDResolution.loadSaved() ?? LEDResolution.default
+        resolution = saved
+        heightText = String(saved.height)
+        widthText = String(saved.width)
+        cropState.aspectRatio = saved.aspectRatio
+    }
 
     // MARK: - Animation
 
@@ -424,6 +432,7 @@ final class StripArtViewModel: ObservableObject {
         var state = cropState
         state.aspectRatio = resolution.aspectRatio
         cropState = state
+        resolution.save()
     }
 
     func mutateCropState(in containerSize: CGSize, _ mutate: (inout CropOverlayState) -> Void) {

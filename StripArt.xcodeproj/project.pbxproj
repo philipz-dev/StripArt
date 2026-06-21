@@ -27,6 +27,8 @@
 		A100010021 /* CameraPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020021 /* CameraPicker.swift */; };
 		A100010022 /* AppearanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020022 /* AppearanceView.swift */; };
 		A100010023 /* TipsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020023 /* TipsView.swift */; };
+		A100010025 /* StoreManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020025 /* StoreManager.swift */; };
+		A100010026 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020026 /* PaywallView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -52,6 +54,9 @@
 		A100020021 /* CameraPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPicker.swift; sourceTree = "<group>"; };
 		A100020022 /* AppearanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceView.swift; sourceTree = "<group>"; };
 		A100020023 /* TipsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipsView.swift; sourceTree = "<group>"; };
+		A100020025 /* StoreManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreManager.swift; sourceTree = "<group>"; };
+		A100020026 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
+		A100020027 /* StripArt.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; name = StripArt.storekit; path = ../StripArt.storekit; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -84,6 +89,7 @@
 				A100040007 /* Services */,
 				A100040008 /* Resources */,
 				A100020015 /* Info.plist */,
+				A100020027 /* StripArt.storekit */,
 			);
 			path = StripArt;
 			sourceTree = "<group>";
@@ -127,6 +133,7 @@
 				A100020020 /* SaveSuccessOverlay.swift */,
 				A100020021 /* CameraPicker.swift */,
 				A100020023 /* TipsView.swift */,
+				A100020026 /* PaywallView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -137,6 +144,7 @@
 				A100020011 /* ImageProcessor.swift */,
 				A100020012 /* GIFExporter.swift */,
 				A100020013 /* PhotoLibrarySaver.swift */,
+				A100020025 /* StoreManager.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -235,6 +243,8 @@
 				A100010017 /* FrameRateView.swift in Sources */,
 				A100010022 /* AppearanceView.swift in Sources */,
 				A100010023 /* TipsView.swift in Sources */,
+				A100010025 /* StoreManager.swift in Sources */,
+				A100010026 /* PaywallView.swift in Sources */,
 				A100010011 /* ImageProcessor.swift in Sources */,
 				A100010012 /* GIFExporter.swift in Sources */,
 				A100010013 /* PhotoLibrarySaver.swift in Sources */,

@@ -37,6 +37,21 @@ final class StripArtViewModel: ObservableObject {
     @Published private(set) var isSaving = false
     @Published var errorMessage: String?
     @Published private(set) var showSaveConfirmation = false
+    @Published var showPaywall = false
+
+    // MARK: - Free export limit
+
+    /// Number of animations that can be saved before the unlock is required.
+    let freeExportLimit = 5
+    @Published private(set) var freeExportsUsed = UserDefaults.standard.integer(forKey: "freeExportsUsed")
+
+    var remainingFreeExports: Int {
+        max(0, freeExportLimit - freeExportsUsed)
+    }
+
+    var hasFreeExportsLeft: Bool {
+        freeExportsUsed < freeExportLimit
+    }
 
     // MARK: - Frame rate
 
@@ -451,8 +466,15 @@ final class StripArtViewModel: ObservableObject {
 
     // MARK: - Save
 
-    func saveGIF() async {
+    /// Saves the animation. When the user has not unlocked unlimited exports,
+    /// this consumes one of the free exports; the caller is responsible for
+    /// presenting the paywall first when no free exports remain.
+    func saveGIF(unlocked: Bool) async {
         guard !cgFrames.isEmpty else { return }
+        guard unlocked || hasFreeExportsLeft else {
+            showPaywall = true
+            return
+        }
 
         isSaving = true
         defer { isSaving = false }
@@ -471,11 +493,19 @@ final class StripArtViewModel: ObservableObject {
 
         do {
             try await PhotoLibrarySaver.saveGIF(data)
+            if !unlocked {
+                consumeFreeExport()
+            }
             stopAnimation()
             showSaveConfirmation = true
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    private func consumeFreeExport() {
+        freeExportsUsed += 1
+        UserDefaults.standard.set(freeExportsUsed, forKey: "freeExportsUsed")
     }
 
     func confirmSaveSuccess() {

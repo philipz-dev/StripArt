@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var viewModel = StripArtViewModel()
+    @StateObject private var store = StoreManager()
 
     var body: some View {
         NavigationStack {
@@ -16,9 +17,23 @@ struct ContentView: View {
                     }
                     .transition(.opacity)
                 }
+
+                if viewModel.showPaywall {
+                    PaywallView(
+                        store: store,
+                        freeLimit: viewModel.freeExportLimit,
+                        onClose: { viewModel.showPaywall = false },
+                        onUnlocked: {
+                            viewModel.showPaywall = false
+                            Task { await viewModel.saveGIF(unlocked: true) }
+                        }
+                    )
+                    .transition(.opacity)
+                }
             }
             .animation(.easeInOut(duration: 0.25), value: viewModel.screen)
             .animation(.easeInOut(duration: 0.25), value: viewModel.showSaveConfirmation)
+            .animation(.easeInOut(duration: 0.25), value: viewModel.showPaywall)
         }
         .alert("Error", isPresented: errorBinding) {
             Button("OK", role: .cancel) {
@@ -41,7 +56,7 @@ struct ContentView: View {
         case .appearance:
             AppearanceView(viewModel: viewModel)
         case .preview:
-            PreviewView(viewModel: viewModel)
+            PreviewView(viewModel: viewModel, store: store)
         }
     }
 

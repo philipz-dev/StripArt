@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PreviewView: View {
     @ObservedObject var viewModel: StripArtViewModel
+    @ObservedObject var store: StoreManager
     @State private var shareItem: ShareGIFItem?
 
     var body: some View {
@@ -74,7 +75,7 @@ struct PreviewView: View {
                 )
 
                 Button {
-                    Task { await viewModel.saveGIF() }
+                    saveOrPrompt()
                 } label: {
                     if viewModel.isSaving {
                         ProgressView()
@@ -85,6 +86,12 @@ struct PreviewView: View {
                 }
                 .buttonStyle(GradientButtonStyle())
                 .disabled(viewModel.isProcessing || viewModel.isReprocessingDither || viewModel.frames.isEmpty || viewModel.isSaving)
+            }
+
+            if !store.isUnlocked {
+                Text(freeExportsLabel)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Button {
@@ -100,6 +107,23 @@ struct PreviewView: View {
                 )
             )
             .disabled(viewModel.gifData == nil || viewModel.isProcessing || viewModel.isReprocessingDither)
+        }
+    }
+
+    private var freeExportsLabel: String {
+        let remaining = viewModel.remainingFreeExports
+        if remaining == 0 {
+            return "No free animations left · unlock to keep saving"
+        }
+        return "Free animations left: \(remaining)"
+    }
+
+    private func saveOrPrompt() {
+        if store.isUnlocked || viewModel.hasFreeExportsLeft {
+            Task { await viewModel.saveGIF(unlocked: store.isUnlocked) }
+        } else {
+            store.purchaseError = nil
+            viewModel.showPaywall = true
         }
     }
 

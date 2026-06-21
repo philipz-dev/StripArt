@@ -3,12 +3,22 @@ import SwiftUI
 
 struct MainView: View {
     @ObservedObject var viewModel: StripArtViewModel
+    @AppStorage("hideTipsOnPhotoAction") private var hideTipsOnPhotoAction = false
     @State private var showCamera = false
+    @State private var showPhotoPicker = false
+    @State private var showTips = false
+    @State private var doNotShowTipsAgain = false
+    @State private var pendingPhotoAction: PendingPhotoAction?
     @FocusState private var focusedField: ResolutionField?
 
     private enum ResolutionField {
         case height
         case width
+    }
+
+    private enum PendingPhotoAction {
+        case importPhoto
+        case takePhoto
     }
 
     // Shared brand gradient: light blue → deep blue.
@@ -45,23 +55,47 @@ struct MainView: View {
             }
             .ignoresSafeArea()
         }
+        .photosPicker(
+            isPresented: $showPhotoPicker,
+            selection: $viewModel.selectedPhotoItem,
+            matching: .images,
+            photoLibrary: .shared()
+        )
+        .overlay {
+            if showTips {
+                TipsView(
+                    doNotShowAgain: $doNotShowTipsAgain,
+                    onContinue: continueFromTips,
+                    onDismiss: dismissTips
+                )
+                .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: showTips)
     }
 
     // MARK: - Setup (no photo yet)
 
     private var setupContent: some View {
-        ScrollView {
-            VStack(spacing: 28) {
-                StripArtLogo()
-                    .padding(.top, 8)
+        ZStack(alignment: .bottomTrailing) {
+            ScrollView {
+                VStack(spacing: 28) {
+                    StripArtLogo()
+                        .padding(.top, 8)
 
-                header
+                    header
 
-                resolutionSection
+                    resolutionSection
 
-                photoSection
+                    photoSection
+                }
+                .padding(24)
+                .padding(.bottom, hideTipsOnPhotoAction ? 56 : 0)
             }
-            .padding(24)
+
+            if hideTipsOnPhotoAction {
+                tipsHelpButton
+            }
         }
     }
 
@@ -152,16 +186,14 @@ struct MainView: View {
             stepHeader(number: "2", title: "Import or take a photo")
 
             HStack(spacing: 14) {
-                PhotosPicker(
-                    selection: $viewModel.selectedPhotoItem,
-                    matching: .images,
-                    photoLibrary: .shared()
-                ) {
+                Button {
+                    beginPhotoAction(.importPhoto)
+                } label: {
                     photoActionLabel(title: "Import Photo", systemImage: "photo.on.rectangle")
                 }
 
                 Button {
-                    showCamera = true
+                    beginPhotoAction(.takePhoto)
                 } label: {
                     photoActionLabel(title: "Take Photo", systemImage: "camera.fill")
                 }
@@ -194,6 +226,63 @@ struct MainView: View {
             Text(title)
                 .font(.system(.headline, design: .rounded))
                 .foregroundStyle(.primary)
+        }
+    }
+
+    // MARK: - Tips
+
+    private var tipsHelpButton: some View {
+        Button {
+            pendingPhotoAction = nil
+            doNotShowTipsAgain = hideTipsOnPhotoAction
+            showTips = true
+        } label: {
+            Image(systemName: "questionmark.circle.fill")
+                .font(.system(size: 32))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(BrandStyle.blue)
+        }
+        .padding(24)
+        .accessibilityLabel("Show tips")
+    }
+
+    private func beginPhotoAction(_ action: PendingPhotoAction) {
+        if hideTipsOnPhotoAction {
+            performPhotoAction(action)
+        } else {
+            pendingPhotoAction = action
+            doNotShowTipsAgain = false
+            showTips = true
+        }
+    }
+
+    private func continueFromTips() {
+        if doNotShowTipsAgain {
+            hideTipsOnPhotoAction = true
+        }
+
+        let action = pendingPhotoAction
+        pendingPhotoAction = nil
+        showTips = false
+        doNotShowTipsAgain = false
+
+        if let action {
+            performPhotoAction(action)
+        }
+    }
+
+    private func dismissTips() {
+        pendingPhotoAction = nil
+        showTips = false
+        doNotShowTipsAgain = false
+    }
+
+    private func performPhotoAction(_ action: PendingPhotoAction) {
+        switch action {
+        case .importPhoto:
+            showPhotoPicker = true
+        case .takePhoto:
+            showCamera = true
         }
     }
 

@@ -26,6 +26,7 @@
 		A100010020 /* SaveSuccessOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020020 /* SaveSuccessOverlay.swift */; };
 		A100010021 /* CameraPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020021 /* CameraPicker.swift */; };
 		A100010022 /* AppearanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020022 /* AppearanceView.swift */; };
+		A100010023 /* TipsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020023 /* TipsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -50,6 +51,7 @@
 		A100020020 /* SaveSuccessOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveSuccessOverlay.swift; sourceTree = "<group>"; };
 		A100020021 /* CameraPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPicker.swift; sourceTree = "<group>"; };
 		A100020022 /* AppearanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceView.swift; sourceTree = "<group>"; };
+		A100020023 /* TipsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -124,6 +126,7 @@
 				A100020019 /* StripArtButtonStyles.swift */,
 				A100020020 /* SaveSuccessOverlay.swift */,
 				A100020021 /* CameraPicker.swift */,
+				A100020023 /* TipsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -231,6 +234,7 @@
 				A100010010 /* PreviewView.swift in Sources */,
 				A100010017 /* FrameRateView.swift in Sources */,
 				A100010022 /* AppearanceView.swift in Sources */,
+				A100010023 /* TipsView.swift in Sources */,
 				A100010011 /* ImageProcessor.swift in Sources */,
 				A100010012 /* GIFExporter.swift in Sources */,
 				A100010013 /* PhotoLibrarySaver.swift in Sources */,

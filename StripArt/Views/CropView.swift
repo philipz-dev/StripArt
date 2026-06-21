@@ -9,145 +9,86 @@ struct CropView: View {
     @State private var pinchStartScale: CGFloat?
     @State private var scaleStart: (scale: CGFloat, distance: CGFloat)?
 
-    /// Vertical space reserved for the top controls and bottom action buttons,
-    /// so the photo never sits underneath them.
-    private let topReserved: CGFloat = 150
-    private let bottomReserved: CGFloat = 130
-
     private let cropSpace = "cropArea"
 
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                Color.black.ignoresSafeArea()
+        VStack(spacing: 20) {
+            topControls
 
-                if let image = viewModel.sourceImage {
-                    cropContent(image: image, containerSize: geometry.size)
-                }
-
-                overlayControls
+            if let image = viewModel.sourceImage {
+                cropPicture(image: image)
             }
-            .coordinateSpace(name: cropSpace)
+
+            DecisionButtons(
+                cancel: { viewModel.cancelCrop() },
+                confirm: { confirmPhase() }
+            )
         }
+        .padding(24)
         .navigationBarHidden(true)
     }
 
+    /// The photo laid out exactly like the photo-review picture (same modifiers,
+    /// same border) so there is no jump moving between screens. All crop UI is
+    /// overlaid on top, measured against the image's own bounds.
+    private func cropPicture(image: UIImage) -> some View {
+        Image(uiImage: image)
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .overlay {
+                GeometryReader { geo in
+                    cropOverlay(in: geo.size)
+                        .onAppear { setDisplay(size: geo.size, image: image) }
+                        .onChange(of: geo.size) { _, newSize in
+                            setDisplay(size: newSize, image: image)
+                        }
+                }
+                .coordinateSpace(name: cropSpace)
+            }
+            .overlay(Picture3DBorder())
+    }
+
     @ViewBuilder
-    private func cropContent(image: UIImage, containerSize: CGSize) -> some View {
-        let fitted = aspectFitRect(imageSize: image.size, in: containerSize)
+    private func cropOverlay(in size: CGSize) -> some View {
+        let imageRect = CGRect(origin: .zero, size: size)
+        let overlay = viewModel.cropState.overlayRect(in: size)
 
         ZStack {
-            Image(uiImage: image)
-                .resizable()
-                .frame(width: fitted.width, height: fitted.height)
-                .position(x: fitted.midX, y: fitted.midY)
+            CropOverlayView(overlayRect: overlay)
+                .frame(width: size.width, height: size.height)
                 .allowsHitTesting(false)
 
-            CropOverlayView(
-                overlayRect: viewModel.cropState.overlayRect(in: fitted.size)
-            )
-            .frame(width: fitted.width, height: fitted.height)
-            .position(x: fitted.midX, y: fitted.midY)
-            .allowsHitTesting(false)
-
             if viewModel.cropPhase == .end, let direction = viewModel.scrollDirection {
-                let overlay = viewModel.cropState.overlayRect(in: fitted.size)
                 DirectionMoveArrow(direction: direction)
-                    .position(
-                        x: fitted.minX + overlay.midX,
-                        y: fitted.minY + overlay.midY
-                    )
+                    .position(x: overlay.midX, y: overlay.midY)
                     .allowsHitTesting(false)
             }
 
             Color.clear
-                .frame(width: fitted.width, height: fitted.height)
-                .position(x: fitted.midX, y: fitted.midY)
+                .frame(width: size.width, height: size.height)
                 .contentShape(Rectangle())
-                .gesture(dragGesture(in: fitted))
-                .simultaneousGesture(pinchGesture(in: fitted))
+                .gesture(dragGesture(in: imageRect))
+                .simultaneousGesture(pinchGesture(in: imageRect))
 
-            // Corner handles for resizing (start phase only).
             if viewModel.cropPhase == .start {
-                let overlay = viewModel.cropState.overlayRect(in: fitted.size)
                 ForEach(Array(corners(of: overlay).enumerated()), id: \.offset) { _, corner in
                     cornerHandle
-                        .position(x: fitted.minX + corner.x, y: fitted.minY + corner.y)
-                        .gesture(scaleGesture(in: fitted))
+                        .position(x: corner.x, y: corner.y)
+                        .gesture(scaleGesture(in: imageRect))
                 }
             }
-        }
-        .onAppear {
-            updateLayout(image: image, containerSize: containerSize)
-        }
-        .onChange(of: containerSize.width) {
-            updateLayout(image: image, containerSize: containerSize)
-        }
-        .onChange(of: containerSize.height) {
-            updateLayout(image: image, containerSize: containerSize)
-        }
-    }
-
-    private var overlayControls: some View {
-        VStack {
-            topControls
-                .padding(.top, 60)
-
-            Spacer()
-
-            HStack {
-                Button {
-                    viewModel.cancelCrop()
-                } label: {
-                    Image(systemName: "xmark")
-                }
-                .buttonStyle(
-                    CircleIconButtonStyle(
-                        gradient: BrandStyle.red,
-                        shadowColor: BrandStyle.redShadow,
-                        diameter: 62,
-                        iconSize: 24
-                    )
-                )
-
-                Spacer()
-
-                Button {
-                    if viewModel.cropPhase == .start {
-                        viewModel.confirmStartPhase(
-                            imageDisplayRect: imageDisplayRect,
-                            imagePixelSize: imagePixelSize
-                        )
-                    } else {
-                        viewModel.confirmEndPhase(
-                            imageDisplayRect: imageDisplayRect,
-                            imagePixelSize: imagePixelSize
-                        )
-                    }
-                } label: {
-                    Image(systemName: "checkmark")
-                }
-                .buttonStyle(
-                    CircleIconButtonStyle(
-                        gradient: BrandStyle.green,
-                        shadowColor: BrandStyle.greenShadow,
-                        diameter: 62,
-                        iconSize: 24
-                    )
-                )
-            }
-            .padding(.horizontal, 32)
-            .padding(.bottom, 40)
         }
     }
 
     private var topControls: some View {
-        VStack(spacing: 16) {
-            Text(viewModel.cropPhase == .start ? "Choose start size & position" : "Choose end position")
-                .font(.headline)
-                .foregroundStyle(.white)
+        VStack(spacing: 14) {
+            Text(viewModel.cropPhase == .start ? "Choose start size & position" : "Drag to end position")
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .frame(maxWidth: .infinity)
                 .multilineTextAlignment(.center)
-                .shadow(radius: 4)
 
             HStack(spacing: 14) {
                 ForEach(ScrollDirection.allCases) { direction in
@@ -155,7 +96,7 @@ struct CropView: View {
                 }
             }
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 12)
     }
 
     private func directionArrow(_ direction: ScrollDirection) -> some View {
@@ -167,9 +108,9 @@ struct CropView: View {
         }
         .buttonStyle(
             CircleIconButtonStyle(
-                gradient: selected ? BrandStyle.blue : BrandStyle.glass,
+                gradient: selected ? BrandStyle.blue : BrandStyle.neutral,
                 shadowColor: selected ? BrandStyle.blueShadow : .black,
-                foreground: selected ? .white : .white.opacity(0.9),
+                foreground: selected ? .white : .primary,
                 diameter: 50,
                 iconSize: 19,
                 strokeOpacity: selected ? 0.55 : 0.3
@@ -268,34 +209,29 @@ struct CropView: View {
             }
     }
 
-    private func updateLayout(image: UIImage, containerSize: CGSize) {
-        let fitted = aspectFitRect(imageSize: image.size, in: containerSize)
-        imageDisplayRect = fitted
+    private func setDisplay(size: CGSize, image: UIImage) {
+        guard size.width > 0, size.height > 0 else { return }
+        imageDisplayRect = CGRect(origin: .zero, size: size)
         if let cgImage = image.cgImage {
             imagePixelSize = CGSize(width: cgImage.width, height: cgImage.height)
         } else {
             imagePixelSize = image.size
         }
-        viewModel.clampCropState(in: fitted.size)
+        viewModel.clampCropState(in: size)
     }
 
-    private func aspectFitRect(imageSize: CGSize, in containerSize: CGSize) -> CGRect {
-        guard imageSize.width > 0, imageSize.height > 0 else { return .zero }
-
-        // Fit the photo into the region between the top controls and bottom buttons.
-        let availableHeight = max(1, containerSize.height - topReserved - bottomReserved)
-        let availableWidth = containerSize.width
-
-        let widthRatio = availableWidth / imageSize.width
-        let heightRatio = availableHeight / imageSize.height
-        let scale = min(widthRatio, heightRatio)
-
-        let size = CGSize(width: imageSize.width * scale, height: imageSize.height * scale)
-        let origin = CGPoint(
-            x: (containerSize.width - size.width) / 2,
-            y: topReserved + (availableHeight - size.height) / 2
-        )
-        return CGRect(origin: origin, size: size)
+    private func confirmPhase() {
+        if viewModel.cropPhase == .start {
+            viewModel.confirmStartPhase(
+                imageDisplayRect: imageDisplayRect,
+                imagePixelSize: imagePixelSize
+            )
+        } else {
+            viewModel.confirmEndPhase(
+                imageDisplayRect: imageDisplayRect,
+                imagePixelSize: imagePixelSize
+            )
+        }
     }
 }
 

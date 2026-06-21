@@ -39,7 +39,7 @@ struct ImageProcessor {
         cropRect: CGRect,
         resolution: LEDResolution,
         direction: ScrollDirection,
-        algorithm: DitherAlgorithm = .floydSteinberg,
+        algorithm: DitherAlgorithm = .ordered,
         ditherMode: DitherMode = .rgb,
         levelsPerChannel: Int = 8
     ) -> [CGImage] {
@@ -238,9 +238,11 @@ struct ImageProcessor {
         from source: ScrollAnimationSource,
         algorithm: DitherAlgorithm,
         mode: DitherMode = .rgb,
-        levelsPerChannel: Int = 8
+        levelsPerChannel: Int = 8,
+        contrast: Double = 0
     ) -> [CGImage] {
         var pixels = source.unditheredPixels
+        applyContrast(&pixels, amount: contrast)
         applyDither(
             &pixels,
             width: source.sourceWidth,
@@ -263,6 +265,102 @@ struct ImageProcessor {
                 targetWidth: source.targetWidth,
                 targetHeight: source.targetHeight
             )
+        }
+    }
+
+    /// Renders only the region the animation actually travels across (from the
+    /// start viewport to the chosen end position) as a single still image, so the
+    /// user judges exactly what will scroll over the LED bar — not the whole photo.
+    func renderStrip(
+        from source: ScrollAnimationSource,
+        algorithm: DitherAlgorithm,
+        mode: DitherMode = .rgb,
+        levelsPerChannel: Int = 8,
+        contrast: Double = 0
+    ) -> CGImage? {
+        var pixels = source.unditheredPixels
+        applyContrast(&pixels, amount: contrast)
+        applyDither(
+            &pixels,
+            width: source.sourceWidth,
+            height: source.sourceHeight,
+            algorithm: algorithm,
+            mode: mode,
+            levelsPerChannel: levelsPerChannel
+        )
+
+        let region = animatedRegion(for: source)
+        return croppedImage(
+            from: pixels,
+            sourceWidth: source.sourceWidth,
+            sourceHeight: source.sourceHeight,
+            rect: region
+        )
+    }
+
+    /// The union of every viewport position across the animation: the slice of
+    /// the strip that is ever visible on the LED bar between start and end.
+    private func animatedRegion(for source: ScrollAnimationSource) -> CGRect {
+        let base = source.baseViewport
+        let maxOffset = CGFloat(source.offsets.max() ?? 0)
+
+        switch source.direction {
+        case .down:
+            return CGRect(x: base.minX, y: base.minY, width: base.width, height: base.height + maxOffset)
+        case .up:
+            return CGRect(x: base.minX, y: base.minY - maxOffset, width: base.width, height: base.height + maxOffset)
+        case .right:
+            return CGRect(x: base.minX, y: base.minY, width: base.width + maxOffset, height: base.height)
+        case .left:
+            return CGRect(x: base.minX - maxOffset, y: base.minY, width: base.width + maxOffset, height: base.height)
+        }
+    }
+
+    /// Extracts an arbitrary integer-aligned rectangle from an RGBA pixel buffer.
+    private func croppedImage(
+        from pixels: [UInt8],
+        sourceWidth: Int,
+        sourceHeight: Int,
+        rect: CGRect
+    ) -> CGImage? {
+        let x0 = max(0, Int(rect.minX.rounded()))
+        let y0 = max(0, Int(rect.minY.rounded()))
+        let x1 = min(sourceWidth, Int(rect.maxX.rounded()))
+        let y1 = min(sourceHeight, Int(rect.maxY.rounded()))
+        let w = x1 - x0
+        let h = y1 - y0
+
+        guard w > 0, h > 0 else {
+            return makeCGImage(from: pixels, width: sourceWidth, height: sourceHeight)
+        }
+
+        var out = [UInt8]()
+        out.reserveCapacity(w * h * 4)
+        for row in y0..<y1 {
+            let start = (row * sourceWidth + x0) * 4
+            out.append(contentsOf: pixels[start..<(start + w * 4)])
+        }
+        return makeCGImage(from: out, width: w, height: h)
+    }
+
+    /// Adjusts contrast around mid-gray. `amount` ranges from -1 (flat) to 1
+    /// (strong); 0 leaves the pixels untouched.
+    private func applyContrast(_ pixels: inout [UInt8], amount: Double) {
+        guard amount != 0 else { return }
+        let factor = 1 + max(-1, min(1, amount))
+
+        func adjust(_ value: UInt8) -> UInt8 {
+            let scaled = (Double(value) - 128) * factor + 128
+            return UInt8(clamping: Int(scaled.rounded()))
+        }
+
+        var index = 0
+        let count = pixels.count
+        while index + 2 < count {
+            pixels[index] = adjust(pixels[index])
+            pixels[index + 1] = adjust(pixels[index + 1])
+            pixels[index + 2] = adjust(pixels[index + 2])
+            index += 4
         }
     }
 

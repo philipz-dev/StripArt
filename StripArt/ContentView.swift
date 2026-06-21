@@ -6,6 +6,8 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             ZStack {
+                AppBackground()
+
                 screenContent
 
                 if viewModel.showSaveConfirmation {
@@ -36,6 +38,8 @@ struct ContentView: View {
             CropView(viewModel: viewModel)
         case .frameRate:
             FrameRateView(viewModel: viewModel)
+        case .appearance:
+            AppearanceView(viewModel: viewModel)
         case .preview:
             PreviewView(viewModel: viewModel)
         }

@@ -16,7 +16,13 @@ final class StripArtViewModel: ObservableObject {
     @Published var sourceImage: UIImage?
     @Published var cropState = CropOverlayState()
     @Published var scrollDirection: ScrollDirection? = .down
-    @Published var ditherAlgorithm: DitherAlgorithm = .floydSteinberg
+    @Published var ditherAlgorithm: DitherAlgorithm = .ordered
+
+    /// Contrast applied before dithering. -1 = flat, 0 = unchanged, 1 = strong.
+    @Published var contrast: Double = 0
+    /// Single, non-animated frame shown on the dithering and contrast screens.
+    @Published private(set) var stillPreview: UIImage?
+    @Published private(set) var isRenderingStill = false
 
     /// Two-step crop: first pick start size & position, then the end position.
     @Published private(set) var cropPhase: CropPhase = .start
@@ -55,6 +61,7 @@ final class StripArtViewModel: ObservableObject {
 
     @Published private(set) var currentFrameIndex = 0
     private var animationTask: Task<Void, Never>?
+    private var stillRenderTask: Task<Void, Never>?
     private var cgFrames: [CGImage] = []
     /// Full 1-pixel-per-step bounce; user selections subsample from this.
     private var fullCgFrames: [CGImage] = []
@@ -163,17 +170,80 @@ final class StripArtViewModel: ObservableObject {
         screen = .crop
     }
 
+    /// Checkmark on the frame-rate screen: move on to the appearance screen where
+    /// dithering and contrast are tuned on the whole static strip (no motion).
     func confirmFrameRate() {
         guard !fullCgFrames.isEmpty else { return }
+        stopAnimation()
+        screen = .appearance
+        renderStillPreview()
+    }
 
-        let selected = min(max(minFrameCount, frameCount), maxFrameCount)
-        let subsampled = Self.subsample(fullCgFrames, to: selected)
+    /// X on the appearance screen: step back to the frame-rate slider.
+    func cancelAppearance() {
+        screen = .frameRate
+    }
 
-        cgFrames = subsampled
-        frames = subsampled.map { UIImage(cgImage: $0) }
+    /// Checkmark on the appearance screen: render the final animation and preview it.
+    func confirmAppearance() {
+        guard let source = scrollAnimationSource else { return }
+
+        stillRenderTask?.cancel()
+        stopAnimation()
+        isReprocessingDither = true
         gifData = nil
         screen = .preview
-        startAnimation()
+
+        let algorithm = ditherAlgorithm
+        let contrastValue = contrast
+        let selected = min(max(minFrameCount, frameCount), maxFrameCount)
+        let processor = ImageProcessor()
+
+        Task {
+            let rendered = await Task.detached(priority: .userInitiated) {
+                processor.renderScrollAnimation(
+                    from: source,
+                    algorithm: algorithm,
+                    contrast: contrastValue
+                )
+            }.value
+
+            fullCgFrames = rendered
+            maxFrameCount = rendered.count
+
+            let subsampled = Self.subsample(rendered, to: selected)
+            cgFrames = subsampled
+            frames = subsampled.map { UIImage(cgImage: $0) }
+            isReprocessingDither = false
+            startAnimation()
+        }
+    }
+
+    /// Re-renders the still preview using the current algorithm and contrast.
+    func renderStillPreview() {
+        guard let source = scrollAnimationSource else { return }
+
+        stillRenderTask?.cancel()
+        isRenderingStill = true
+
+        let algorithm = ditherAlgorithm
+        let contrastValue = contrast
+        let processor = ImageProcessor()
+
+        stillRenderTask = Task {
+            let image = await Task.detached(priority: .userInitiated) { () -> UIImage? in
+                guard let cgImage = processor.renderStrip(
+                    from: source,
+                    algorithm: algorithm,
+                    contrast: contrastValue
+                ) else { return nil }
+                return UIImage(cgImage: cgImage)
+            }.value
+
+            if Task.isCancelled { return }
+            stillPreview = image
+            isRenderingStill = false
+        }
     }
 
     func cancelPreview() {
@@ -181,7 +251,8 @@ final class StripArtViewModel: ObservableObject {
         frames = []
         cgFrames = []
         gifData = nil
-        screen = .frameRate
+        screen = .appearance
+        renderStillPreview()
     }
 
     func returnToMain() {
@@ -194,7 +265,10 @@ final class StripArtViewModel: ObservableObject {
         frameCount = 0
         maxFrameCount = 0
         scrollDirection = .down
-        ditherAlgorithm = .floydSteinberg
+        ditherAlgorithm = .ordered
+        contrast = 0
+        stillPreview = nil
+        stillRenderTask?.cancel()
         cropPhase = .start
         endCropRect = .zero
         showSaveConfirmation = false
@@ -294,13 +368,20 @@ final class StripArtViewModel: ObservableObject {
 
     func selectDitherAlgorithm(_ algorithm: DitherAlgorithm) {
         guard algorithm != ditherAlgorithm,
-              scrollAnimationSource != nil,
-              screen == .preview else {
+              scrollAnimationSource != nil else {
             return
         }
 
         ditherAlgorithm = algorithm
-        reapplyDitherAlgorithm()
+
+        switch screen {
+        case .appearance:
+            renderStillPreview()
+        case .preview:
+            reapplyDitherAlgorithm()
+        default:
+            break
+        }
     }
 
     private func reapplyDitherAlgorithm() {
@@ -311,12 +392,13 @@ final class StripArtViewModel: ObservableObject {
         gifData = nil
 
         let algorithm = ditherAlgorithm
+        let contrastValue = contrast
         let selectedFrameCount = min(max(minFrameCount, frameCount), maxFrameCount)
         let processor = ImageProcessor()
 
         Task {
             let rendered = await Task.detached(priority: .userInitiated) {
-                processor.renderScrollAnimation(from: source, algorithm: algorithm)
+                processor.renderScrollAnimation(from: source, algorithm: algorithm, contrast: contrastValue)
             }.value
 
             fullCgFrames = rendered

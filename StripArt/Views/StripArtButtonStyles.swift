@@ -53,6 +53,129 @@ enum BrandStyle {
     static let redShadow = Color(red: 0.7, green: 0.1, blue: 0.15)
 }
 
+/// A square black frame with a grey bevel line that gives a 3D look: vertical
+/// borders carry the grey line on their right side, horizontal borders on their
+/// lower side (light from the top-left). Never interactive.
+struct Picture3DBorder: View {
+    var black: CGFloat = 3
+    var grey: CGFloat = 2
+
+    var body: some View {
+        Canvas { context, size in
+            let w = size.width
+            let h = size.height
+            let t = black
+            let g = grey
+            let greyShading = GraphicsContext.Shading.color(Color(white: 0.55))
+            let blackShading = GraphicsContext.Shading.color(.black)
+
+            // Grey bevel lines first (right side of verticals, lower side of horizontals).
+            context.fill(Path(CGRect(x: t, y: 0, width: g, height: h)), with: greyShading)
+            context.fill(Path(CGRect(x: w - g, y: 0, width: g, height: h)), with: greyShading)
+            context.fill(Path(CGRect(x: 0, y: t, width: w, height: g)), with: greyShading)
+            context.fill(Path(CGRect(x: 0, y: h - g, width: w, height: g)), with: greyShading)
+
+            // Black frame, shifted in by the grey width on the right and bottom.
+            context.fill(Path(CGRect(x: 0, y: 0, width: t, height: h - g)), with: blackShading)
+            context.fill(Path(CGRect(x: w - g - t, y: 0, width: t, height: h - g)), with: blackShading)
+            context.fill(Path(CGRect(x: 0, y: 0, width: w - g, height: t)), with: blackShading)
+            context.fill(Path(CGRect(x: 0, y: h - g - t, width: w - g, height: t)), with: blackShading)
+        }
+        .allowsHitTesting(false)
+    }
+}
+
+/// The StripArt wordmark with the glowing spark on the "i". Shared so every
+/// screen shows an identical logo.
+struct StripArtLogo: View {
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 0) {
+            logoText("Str")
+            ZStack(alignment: .top) {
+                logoText("i")
+                Circle()
+                    .fill(Color.white)
+                    .frame(width: 7, height: 7)
+                    .overlay(
+                        Circle()
+                            .fill(Color(red: 0.6, green: 0.85, blue: 1.0))
+                            .blur(radius: 3)
+                    )
+                    .shadow(color: Color(red: 0.4, green: 0.75, blue: 1.0), radius: 6)
+                    .offset(y: -3)
+            }
+            logoText("pArt")
+        }
+        .font(.system(size: 44, weight: .heavy, design: .rounded))
+    }
+
+    private func logoText(_ string: String) -> some View {
+        Text(string).foregroundStyle(BrandStyle.blue)
+    }
+}
+
+/// The standard cancel (✗) / confirm (✓) pair, centered and horizontally
+/// aligned the same way on every screen.
+struct DecisionButtons: View {
+    var confirmEnabled: Bool = true
+    let cancel: () -> Void
+    let confirm: () -> Void
+
+    var body: some View {
+        HStack(spacing: 28) {
+            Button(action: cancel) {
+                Image(systemName: "xmark")
+            }
+            .buttonStyle(
+                CircleIconButtonStyle(
+                    gradient: BrandStyle.red,
+                    shadowColor: BrandStyle.redShadow,
+                    diameter: 72,
+                    iconSize: 27
+                )
+            )
+
+            Button(action: confirm) {
+                Image(systemName: "checkmark")
+            }
+            .buttonStyle(
+                CircleIconButtonStyle(
+                    gradient: BrandStyle.green,
+                    shadowColor: BrandStyle.greenShadow,
+                    diameter: 72,
+                    iconSize: 27
+                )
+            )
+            .opacity(confirmEnabled ? 1 : 0.45)
+            .disabled(!confirmEnabled)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+/// Light blue ambient background used on every screen.
+struct AppBackground: View {
+    var body: some View {
+        ZStack {
+            Color(red: 0.97, green: 0.98, blue: 0.99)
+
+            RadialGradient(
+                colors: [Color(red: 0.42, green: 0.7, blue: 1.0).opacity(0.22), .clear],
+                center: .topLeading,
+                startRadius: 0,
+                endRadius: 420
+            )
+            RadialGradient(
+                colors: [Color(red: 0.55, green: 0.45, blue: 1.0).opacity(0.14), .clear],
+                center: .bottomTrailing,
+                startRadius: 0,
+                endRadius: 460
+            )
+        }
+        .ignoresSafeArea()
+    }
+}
+
 /// Full-width, rounded, glossy gradient button.
 struct GradientButtonStyle: ButtonStyle {
     var gradient: LinearGradient = BrandStyle.blue

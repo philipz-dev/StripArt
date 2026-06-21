@@ -15,9 +15,7 @@ struct MainView: View {
     private var brandGradient: LinearGradient { BrandStyle.blue }
 
     var body: some View {
-        ZStack {
-            background
-
+        Group {
             if viewModel.sourceImage != nil {
                 photoReview
             } else {
@@ -54,7 +52,7 @@ struct MainView: View {
     private var setupContent: some View {
         ScrollView {
             VStack(spacing: 28) {
-                logo
+                StripArtLogo()
                     .padding(.top, 8)
 
                 header
@@ -71,82 +69,19 @@ struct MainView: View {
 
     private var photoReview: some View {
         VStack(spacing: 24) {
-            logo
+            StripArtLogo()
                 .padding(.top, 8)
 
             if let image = viewModel.sourceImage {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.black)
-                    .aspectRatio(image.size.width / max(image.size.height, 1), contentMode: .fit)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .overlay(
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFit()
-                            .padding(6)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(.white.opacity(0.15), lineWidth: 1)
-                    )
-                    .shadow(color: .black.opacity(0.2), radius: 14, x: 0, y: 8)
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .overlay(Picture3DBorder())
             }
 
             decisionButtons
         }
         .padding(24)
-    }
-
-    // MARK: - Background
-
-    private var background: some View {
-        ZStack {
-            Color(red: 0.97, green: 0.98, blue: 0.99)
-
-            // Soft diffuse ambient lighting.
-            RadialGradient(
-                colors: [Color(red: 0.42, green: 0.7, blue: 1.0).opacity(0.22), .clear],
-                center: .topLeading,
-                startRadius: 0,
-                endRadius: 420
-            )
-            RadialGradient(
-                colors: [Color(red: 0.55, green: 0.45, blue: 1.0).opacity(0.14), .clear],
-                center: .bottomTrailing,
-                startRadius: 0,
-                endRadius: 460
-            )
-        }
-        .ignoresSafeArea()
-    }
-
-    // MARK: - Logo
-
-    private var logo: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 0) {
-            logoText("Str")
-            ZStack(alignment: .top) {
-                logoText("i")
-                // Refined glowing spark on the dot of the "i".
-                Circle()
-                    .fill(Color.white)
-                    .frame(width: 7, height: 7)
-                    .overlay(
-                        Circle()
-                            .fill(Color(red: 0.6, green: 0.85, blue: 1.0))
-                            .blur(radius: 3)
-                    )
-                    .shadow(color: Color(red: 0.4, green: 0.75, blue: 1.0), radius: 6)
-                    .offset(y: -3)
-            }
-            logoText("pArt")
-        }
-        .font(.system(size: 44, weight: .heavy, design: .rounded))
-    }
-
-    private func logoText(_ string: String) -> some View {
-        Text(string)
-            .foregroundStyle(brandGradient)
     }
 
     // MARK: - Header
@@ -265,38 +200,11 @@ struct MainView: View {
     // MARK: - Decision (confirm / reject)
 
     private var decisionButtons: some View {
-        HStack(spacing: 28) {
-            Button {
-                viewModel.clearSelectedPhoto()
-            } label: {
-                Image(systemName: "xmark")
-            }
-            .buttonStyle(
-                CircleIconButtonStyle(
-                    gradient: BrandStyle.red,
-                    shadowColor: BrandStyle.redShadow,
-                    diameter: 72,
-                    iconSize: 27
-                )
-            )
-
-            Button {
-                viewModel.goToCrop()
-            } label: {
-                Image(systemName: "checkmark")
-            }
-            .buttonStyle(
-                CircleIconButtonStyle(
-                    gradient: BrandStyle.green,
-                    shadowColor: BrandStyle.greenShadow,
-                    diameter: 72,
-                    iconSize: 27
-                )
-            )
-            .opacity(viewModel.canProceedFromMain ? 1 : 0.45)
-            .disabled(!viewModel.canProceedFromMain)
-        }
-        .frame(maxWidth: .infinity)
+        DecisionButtons(
+            confirmEnabled: viewModel.canProceedFromMain,
+            cancel: { viewModel.clearSelectedPhoto() },
+            confirm: { viewModel.goToCrop() }
+        )
     }
 
     private var gradientButtonBackground: some View {
@@ -345,3 +253,4 @@ private extension View {
         modifier(CardStyle())
     }
 }
+

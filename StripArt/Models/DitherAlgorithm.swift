@@ -1,9 +1,9 @@
 import Foundation
 
 enum DitherAlgorithm: String, CaseIterable, Identifiable, Sendable {
+    case ordered
     case floydSteinberg
     case atkinson
-    case ordered
 
     var id: String { rawValue }
 

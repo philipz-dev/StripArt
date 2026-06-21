@@ -18,8 +18,7 @@ struct FrameRateView: View {
             }
         }
         .padding(24)
-        .navigationTitle("Frame Rate")
-        .navigationBarBackButtonHidden(true)
+        .navigationBarHidden(true)
     }
 
     private var header: some View {
@@ -53,7 +52,7 @@ struct FrameRateView: View {
                 )
 
                 HStack {
-                    Text("\(viewModel.minFrameCount)")
+                    Text("Min \(viewModel.minFrameCount)")
                     Spacer()
                     Text("Max \(viewModel.maxFrameCount)")
                 }
@@ -77,28 +76,11 @@ struct FrameRateView: View {
     }
 
     private var actionButtons: some View {
-        HStack(spacing: 16) {
-            Button(role: .cancel) {
-                viewModel.cancelFrameRate()
-            } label: {
-                Text("Back")
-            }
-            .buttonStyle(
-                GradientButtonStyle(
-                    gradient: BrandStyle.neutral,
-                    shadowColor: .black,
-                    foreground: .primary
-                )
-            )
-
-            Button {
-                viewModel.confirmFrameRate()
-            } label: {
-                Label("Preview", systemImage: "play.fill")
-            }
-            .buttonStyle(GradientButtonStyle())
-            .disabled(viewModel.maxFrameCount == 0)
-        }
+        DecisionButtons(
+            confirmEnabled: viewModel.maxFrameCount != 0,
+            cancel: { viewModel.cancelFrameRate() },
+            confirm: { viewModel.confirmFrameRate() }
+        )
     }
 
     private var isAdjustable: Bool {

@@ -379,33 +379,33 @@ a:hover {
 }
 
 .screenshots-grid {
-  display: flex;
-  flex-wrap: nowrap;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 32px 40px;
+  justify-items: center;
+  max-width: 720px;
+  margin: 0 auto;
 }
 
 .screenshot-card {
-  flex: 1 1 0;
-  min-width: 0;
-  max-width: 170px;
+  width: 100%;
+  max-width: 300px;
   text-align: center;
 }
 
 .screenshot-card .phone-frame {
   width: 100%;
   margin: 0 auto;
-  padding: 8px;
-  border-radius: 26px;
+  padding: 10px;
+  border-radius: 32px;
 }
 
 .screenshot-card .phone-frame::before {
-  height: 14px;
+  height: 18px;
 }
 
 .screenshot-card .phone-screen {
-  border-radius: 20px;
+  border-radius: 24px;
 }
 
 .screenshot-card figcaption {
@@ -670,11 +670,12 @@ a:hover {
   }
 
   .screenshots-grid {
-    flex-wrap: wrap;
+    max-width: 100%;
+    gap: 24px;
   }
 
   .screenshot-card {
-    flex: 0 1 140px;
+    max-width: 260px;
   }
 
   .nav-links {
@@ -685,5 +686,13 @@ a:hover {
 @media (max-width: 640px) {
   .hero {
     padding-top: 42px;
+  }
+
+  .screenshots-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .screenshot-card {
+    max-width: 280px;
   }
 }

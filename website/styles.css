@@ -228,6 +228,11 @@ a:hover {
   display: block;
 }
 
+.screenshot-card .phone-screen img,
+.screenshot-card .phone-screen video {
+  image-rendering: -webkit-optimize-contrast;
+}
+
 .phone-frame {
   width: min(290px, 100%);
   aspect-ratio: 402 / 874;
@@ -380,32 +385,32 @@ a:hover {
 
 .screenshots-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 32px 40px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 40px 48px;
   justify-items: center;
-  max-width: 720px;
+  max-width: 960px;
   margin: 0 auto;
 }
 
 .screenshot-card {
   width: 100%;
-  max-width: 300px;
+  max-width: 402px;
   text-align: center;
 }
 
 .screenshot-card .phone-frame {
   width: 100%;
   margin: 0 auto;
-  padding: 10px;
-  border-radius: 32px;
+  padding: 12px;
+  border-radius: 42px;
 }
 
 .screenshot-card .phone-frame::before {
-  height: 18px;
+  height: 22px;
 }
 
 .screenshot-card .phone-screen {
-  border-radius: 24px;
+  border-radius: 32px;
 }
 
 .screenshot-card figcaption {
@@ -671,11 +676,11 @@ a:hover {
 
   .screenshots-grid {
     max-width: 100%;
-    gap: 24px;
+    gap: 32px;
   }
 
   .screenshot-card {
-    max-width: 260px;
+    max-width: min(402px, 100%);
   }
 
   .nav-links {
@@ -693,6 +698,6 @@ a:hover {
   }
 
   .screenshot-card {
-    max-width: 280px;
+    max-width: min(360px, 100%);
   }
 }

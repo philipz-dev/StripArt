@@ -406,7 +406,7 @@ a:hover {
 }
 
 .screenshot-card .phone-frame::before {
-  height: 22px;
+  content: none;
 }
 
 .screenshot-card .phone-screen {

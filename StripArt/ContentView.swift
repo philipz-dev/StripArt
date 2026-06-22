@@ -42,6 +42,13 @@ struct ContentView: View {
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
+        #if DEBUG
+        .task {
+            if ProcessInfo.processInfo.arguments.contains("-resetTestingState") {
+                await DebugReset.performFullReset(store: store, viewModel: viewModel)
+            }
+        }
+        #endif
     }
 
     @ViewBuilder

@@ -17,6 +17,10 @@ struct PreviewView: View {
                     .foregroundStyle(.secondary)
             }
 
+            if !store.isUnlocked {
+                freeExportsBadge
+            }
+
             Spacer()
 
             actionButtons
@@ -77,45 +81,51 @@ struct PreviewView: View {
                 Button {
                     saveOrPrompt()
                 } label: {
-                    if viewModel.isSaving {
+                    if viewModel.isSaving || store.purchaseInProgress {
                         ProgressView()
                             .tint(.white)
+                    } else if needsUnlock {
+                        Text("Unlock for \(store.displayPrice)")
                     } else {
                         Label("Save", systemImage: "square.and.arrow.down")
                     }
                 }
                 .buttonStyle(GradientButtonStyle())
-                .disabled(viewModel.isProcessing || viewModel.isReprocessingDither || viewModel.frames.isEmpty || viewModel.isSaving)
+                .disabled(viewModel.isProcessing || viewModel.isReprocessingDither || viewModel.frames.isEmpty || viewModel.isSaving || store.purchaseInProgress)
             }
 
-            if !store.isUnlocked {
-                Text(freeExportsLabel)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Button {
-                prepareShare()
-            } label: {
-                Label("Share / Save to Files", systemImage: "square.and.arrow.up")
-            }
-            .buttonStyle(
-                GradientButtonStyle(
-                    gradient: BrandStyle.neutral,
-                    shadowColor: .black,
-                    foreground: .primary
+            if !needsUnlock {
+                Button {
+                    prepareShare()
+                } label: {
+                    Label("Share / Save to Files", systemImage: "square.and.arrow.up")
+                }
+                .buttonStyle(
+                    GradientButtonStyle(
+                        gradient: BrandStyle.neutral,
+                        shadowColor: .black,
+                        foreground: .primary
+                    )
                 )
-            )
-            .disabled(viewModel.gifData == nil || viewModel.isProcessing || viewModel.isReprocessingDither)
+                .disabled(viewModel.gifData == nil || viewModel.isProcessing || viewModel.isReprocessingDither)
+            }
         }
     }
 
-    private var freeExportsLabel: String {
+    private var needsUnlock: Bool {
+        !store.isUnlocked && !viewModel.hasFreeExportsLeft
+    }
+
+    private var freeExportsBadge: some View {
         let remaining = viewModel.remainingFreeExports
-        if remaining == 0 {
-            return "No free animations left · unlock to keep saving"
-        }
-        return "Free animations left: \(remaining)"
+        let isEmpty = remaining == 0
+        return Text(isEmpty
+             ? "No free animations left"
+             : "Free animations left: \(remaining)")
+            .font(.title3.weight(.bold))
+            .foregroundStyle(isEmpty ? Color.red : Color.orange)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
     }
 
     private func saveOrPrompt() {

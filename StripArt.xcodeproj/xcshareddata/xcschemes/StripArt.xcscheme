@@ -50,8 +50,14 @@
          </BuildableReference>
       </BuildableProductRunnable>
       <StoreKitConfigurationFileReference
-         identifier = "../../../StripArt.storekit">
+         identifier = "../../StripArt/Resources/StripArt.storekit">
       </StoreKitConfigurationFileReference>
+      <CommandLineArguments>
+         <CommandLineArgument
+            argument = "-resetTestingState"
+            isEnabled = "NO">
+         </CommandLineArgument>
+      </CommandLineArguments>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"

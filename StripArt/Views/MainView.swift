@@ -25,13 +25,7 @@ struct MainView: View {
     private var brandGradient: LinearGradient { BrandStyle.blue }
 
     var body: some View {
-        Group {
-            if viewModel.sourceImage != nil {
-                photoReview
-            } else {
-                setupContent
-            }
-        }
+        setupContent
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
@@ -97,25 +91,6 @@ struct MainView: View {
                 tipsHelpButton
             }
         }
-    }
-
-    // MARK: - Photo review (photo selected)
-
-    private var photoReview: some View {
-        VStack(spacing: 24) {
-            StripArtLogo()
-                .padding(.top, 8)
-
-            if let image = viewModel.sourceImage {
-                Image(uiImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .overlay(Picture3DBorder())
-            }
-
-            decisionButtons
-        }
-        .padding(24)
     }
 
     // MARK: - Header
@@ -284,16 +259,6 @@ struct MainView: View {
         case .takePhoto:
             showCamera = true
         }
-    }
-
-    // MARK: - Decision (confirm / reject)
-
-    private var decisionButtons: some View {
-        DecisionButtons(
-            confirmEnabled: viewModel.canProceedFromMain,
-            cancel: { viewModel.clearSelectedPhoto() },
-            confirm: { viewModel.goToCrop() }
-        )
     }
 
     private var gradientButtonBackground: some View {

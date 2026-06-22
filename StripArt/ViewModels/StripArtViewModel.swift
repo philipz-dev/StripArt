@@ -53,6 +53,15 @@ final class StripArtViewModel: ObservableObject {
         freeExportsUsed < freeExportLimit
     }
 
+    #if DEBUG
+    func resetTestingState() {
+        freeExportsUsed = 0
+        showPaywall = false
+        screen = .main
+        returnToMain()
+    }
+    #endif
+
     // MARK: - Frame rate
 
     /// Number of frames the user wants in the bounce. Defaults to the full
@@ -121,6 +130,10 @@ final class StripArtViewModel: ObservableObject {
             // Step back to choosing the start size & position.
             cropPhase = .start
         } else {
+            // Going back from the start phase returns to the setup screen, so
+            // the selected photo is cleared (there is no photo review step).
+            selectedPhotoItem = nil
+            sourceImage = nil
             screen = .main
         }
     }
@@ -300,6 +313,7 @@ final class StripArtViewModel: ObservableObject {
         var state = cropState
         state.reset(for: resolution.aspectRatio)
         cropState = state
+        goToCrop()
     }
 
     func loadSelectedPhoto() async {
@@ -314,6 +328,7 @@ final class StripArtViewModel: ObservableObject {
                     var state = cropState
                     state.reset(for: resolution.aspectRatio)
                     cropState = state
+                    goToCrop()
                 }
             }
         } catch {
@@ -567,11 +582,18 @@ struct CropOverlayState {
     var center: CGPoint = CGPoint(x: 0.5, y: 0.5)
     var scale: CGFloat = 0.8
     var aspectRatio: CGFloat = LEDResolution.default.aspectRatio
+    /// Photo magnification in the start phase. 1 = no zoom (start position).
+    /// Higher values capture a smaller region while the on-screen frame stays put.
+    var zoom: CGFloat = 1.0
+
+    static let minZoom: CGFloat = 1.0
+    static let maxZoom: CGFloat = 4.0
 
     mutating func reset(for aspectRatio: CGFloat) {
         self.aspectRatio = aspectRatio
         center = CGPoint(x: 0.5, y: 0.5)
         scale = 0.8
+        zoom = 1.0
     }
 
     func overlayRect(in containerSize: CGSize) -> CGRect {
@@ -591,6 +613,23 @@ struct CropOverlayState {
         let originY = center.y * containerSize.height - overlayHeight / 2
 
         return CGRect(x: originX, y: originY, width: overlayWidth, height: overlayHeight)
+    }
+
+    /// The region actually captured: the base frame shrunk by the zoom factor
+    /// about its center. In the start phase the base-size frame drawn over the
+    /// zoomed photo shows exactly this region; in the end phase this is drawn
+    /// directly, so the frame grows/shrinks with the zoom.
+    func effectiveOverlayRect(in containerSize: CGSize) -> CGRect {
+        let base = overlayRect(in: containerSize)
+        let z = max(1, zoom)
+        let width = base.width / z
+        let height = base.height / z
+        return CGRect(
+            x: base.midX - width / 2,
+            y: base.midY - height / 2,
+            width: width,
+            height: height
+        )
     }
 
     mutating func clamp(in containerSize: CGSize) {
@@ -625,7 +664,8 @@ struct CropOverlayState {
         guard displaySize.width > 0, displaySize.height > 0 else { return .zero }
 
         // Overlay is expressed in local image-view coordinates (origin 0,0).
-        let overlay = overlayRect(in: displaySize)
+        // The effective (zoom-adjusted) rect is the region actually captured.
+        let overlay = effectiveOverlayRect(in: displaySize)
         let relative = CGRect(
             x: overlay.minX / displaySize.width,
             y: overlay.minY / displaySize.height,

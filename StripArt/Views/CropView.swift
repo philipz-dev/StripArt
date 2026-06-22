@@ -16,7 +16,13 @@ struct CropView: View {
             topControls
 
             if let image = viewModel.sourceImage {
-                cropPicture(image: image)
+                HStack(spacing: 8) {
+                    cropPicture(image: image)
+
+                    if viewModel.cropPhase == .start {
+                        zoomSlider
+                    }
+                }
             }
 
             DecisionButtons(
@@ -28,39 +34,60 @@ struct CropView: View {
         .navigationBarHidden(true)
     }
 
-    /// The photo laid out exactly like the photo-review picture (same modifiers,
-    /// same border) so there is no jump moving between screens. All crop UI is
-    /// overlaid on top, measured against the image's own bounds.
+    /// The photo and all crop UI. In the start phase the photo itself is
+    /// magnified by the zoom while the selection frame stays put; in the end
+    /// phase the photo sits at its natural fit and the frame is drawn at the
+    /// zoom-adjusted (effective) size so it grows/shrinks with the zoom.
     private func cropPicture(image: UIImage) -> some View {
-        Image(uiImage: image)
-            .resizable()
-            .aspectRatio(contentMode: .fit)
-            .overlay {
-                GeometryReader { geo in
-                    cropOverlay(in: geo.size)
-                        .onAppear { setDisplay(size: geo.size, image: image) }
-                        .onChange(of: geo.size) { _, newSize in
-                            setDisplay(size: newSize, image: image)
-                        }
-                }
-                .coordinateSpace(name: cropSpace)
+        GeometryReader { geo in
+            let display = fittedSize(for: image, in: geo.size)
+            let isStart = viewModel.cropPhase == .start
+
+            ZStack {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: display.width, height: display.height)
+                    .scaleEffect(
+                        isStart ? max(1, viewModel.cropState.zoom) : 1,
+                        anchor: UnitPoint(
+                            x: viewModel.cropState.center.x,
+                            y: viewModel.cropState.center.y
+                        )
+                    )
+                    .clipped()
+
+                cropOverlay(in: display)
             }
+            .frame(width: display.width, height: display.height)
+            .clipped()
             .overlay(Picture3DBorder())
+            .coordinateSpace(name: cropSpace)
+            .frame(width: geo.size.width, height: geo.size.height)
+            .onAppear { setDisplay(size: display, image: image) }
+            .onChange(of: display) { _, newSize in
+                setDisplay(size: newSize, image: image)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     @ViewBuilder
     private func cropOverlay(in size: CGSize) -> some View {
         let imageRect = CGRect(origin: .zero, size: size)
-        let overlay = viewModel.cropState.overlayRect(in: size)
+        let base = viewModel.cropState.overlayRect(in: size)
+        let drawn = viewModel.cropPhase == .start
+            ? base
+            : viewModel.cropState.effectiveOverlayRect(in: size)
 
         ZStack {
-            CropOverlayView(overlayRect: overlay)
+            CropOverlayView(overlayRect: drawn)
                 .frame(width: size.width, height: size.height)
                 .allowsHitTesting(false)
 
             if viewModel.cropPhase == .end, let direction = viewModel.scrollDirection {
                 DirectionMoveArrow(direction: direction)
-                    .position(x: overlay.midX, y: overlay.midY)
+                    .position(x: drawn.midX, y: drawn.midY)
                     .allowsHitTesting(false)
             }
 
@@ -71,12 +98,66 @@ struct CropView: View {
                 .simultaneousGesture(pinchGesture(in: imageRect))
 
             if viewModel.cropPhase == .start {
-                ForEach(Array(corners(of: overlay).enumerated()), id: \.offset) { _, corner in
+                ForEach(Array(corners(of: base).enumerated()), id: \.offset) { _, corner in
                     cornerHandle
                         .position(x: corner.x, y: corner.y)
                         .gesture(scaleGesture(in: imageRect))
                 }
             }
+        }
+        .frame(width: size.width, height: size.height)
+    }
+
+    /// Vertical zoom slider: `+` on top, `−` at the bottom (min = start).
+    private var zoomSlider: some View {
+        let length: CGFloat = 180
+        return VStack(spacing: 12) {
+            Image(systemName: "plus")
+                .font(.headline.weight(.bold))
+                .foregroundStyle(.secondary)
+
+            Slider(
+                value: zoomBinding,
+                in: Double(CropOverlayState.minZoom)...Double(CropOverlayState.maxZoom)
+            )
+            .frame(width: length)
+            .rotationEffect(.degrees(-90))
+            .frame(width: 44, height: length)
+
+            Image(systemName: "minus")
+                .font(.headline.weight(.bold))
+                .foregroundStyle(.secondary)
+        }
+        .frame(width: 44)
+    }
+
+    private var zoomBinding: Binding<Double> {
+        Binding(
+            get: { Double(viewModel.cropState.zoom) },
+            set: { newValue in
+                let size = imageDisplayRect.size
+                guard size.width > 0, size.height > 0 else { return }
+                viewModel.mutateCropState(in: size) { state in
+                    state.zoom = min(
+                        max(CropOverlayState.minZoom, CGFloat(newValue)),
+                        CropOverlayState.maxZoom
+                    )
+                }
+            }
+        )
+    }
+
+    private func fittedSize(for image: UIImage, in available: CGSize) -> CGSize {
+        guard image.size.width > 0, image.size.height > 0,
+              available.width > 0, available.height > 0 else {
+            return available
+        }
+        let imageAspect = image.size.width / image.size.height
+        let availableAspect = available.width / available.height
+        if imageAspect > availableAspect {
+            return CGSize(width: available.width, height: available.width / imageAspect)
+        } else {
+            return CGSize(width: available.height * imageAspect, height: available.height)
         }
     }
 

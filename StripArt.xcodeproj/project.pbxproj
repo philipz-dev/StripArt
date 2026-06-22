@@ -29,6 +29,8 @@
 		A100010023 /* TipsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020023 /* TipsView.swift */; };
 		A100010025 /* StoreManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020025 /* StoreManager.swift */; };
 		A100010026 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020026 /* PaywallView.swift */; };
+		A100010027 /* DebugReset.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020028 /* DebugReset.swift */; };
+		A100010028 /* StoreKitTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A100020029 /* StoreKitTest.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -56,7 +58,9 @@
 		A100020023 /* TipsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipsView.swift; sourceTree = "<group>"; };
 		A100020025 /* StoreManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreManager.swift; sourceTree = "<group>"; };
 		A100020026 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
-		A100020027 /* StripArt.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; name = StripArt.storekit; path = ../StripArt.storekit; sourceTree = "<group>"; };
+		A100020027 /* StripArt.storekit */ = {isa = PBXFileReference; lastKnownFileType = text.storekit; path = StripArt.storekit; sourceTree = "<group>"; };
+		A100020028 /* DebugReset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugReset.swift; sourceTree = "<group>"; };
+		A100020029 /* StoreKitTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKitTest.framework; path = System/Library/Frameworks/StoreKitTest.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -64,6 +68,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A100010028 /* StoreKitTest.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -89,7 +94,6 @@
 				A100040007 /* Services */,
 				A100040008 /* Resources */,
 				A100020015 /* Info.plist */,
-				A100020027 /* StripArt.storekit */,
 			);
 			path = StripArt;
 			sourceTree = "<group>";
@@ -145,6 +149,7 @@
 				A100020012 /* GIFExporter.swift */,
 				A100020013 /* PhotoLibrarySaver.swift */,
 				A100020025 /* StoreManager.swift */,
+				A100020028 /* DebugReset.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -153,6 +158,7 @@
 			isa = PBXGroup;
 			children = (
 				A100020014 /* Assets.xcassets */,
+				A100020027 /* StripArt.storekit */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -245,6 +251,7 @@
 				A100010023 /* TipsView.swift in Sources */,
 				A100010025 /* StoreManager.swift in Sources */,
 				A100010026 /* PaywallView.swift in Sources */,
+				A100010027 /* DebugReset.swift in Sources */,
 				A100010011 /* ImageProcessor.swift in Sources */,
 				A100010012 /* GIFExporter.swift in Sources */,
 				A100010013 /* PhotoLibrarySaver.swift in Sources */,

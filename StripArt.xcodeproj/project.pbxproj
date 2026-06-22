@@ -61,6 +61,7 @@
 		A100020027 /* StripArt.storekit */ = {isa = PBXFileReference; lastKnownFileType = text.storekit; path = StripArt.storekit; sourceTree = "<group>"; };
 		A100020028 /* DebugReset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugReset.swift; sourceTree = "<group>"; };
 		A100020029 /* StoreKitTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKitTest.framework; path = System/Library/Frameworks/StoreKitTest.framework; sourceTree = SDKROOT; };
+		A100020030 /* TESTFLIGHT-CHECKLIST.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TESTFLIGHT-CHECKLIST.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,6 +80,7 @@
 			isa = PBXGroup;
 			children = (
 				A100040002 /* StripArt */,
+				A100020030 /* TESTFLIGHT-CHECKLIST.md */,
 				A100040003 /* Products */,
 			);
 			sourceTree = "<group>";

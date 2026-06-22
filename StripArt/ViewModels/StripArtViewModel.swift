@@ -565,13 +565,13 @@ final class StripArtViewModel: ObservableObject {
     func mutateCropState(in containerSize: CGSize, _ mutate: (inout CropOverlayState) -> Void) {
         var state = cropState
         mutate(&state)
-        state.clamp(in: containerSize)
+        state.clamp(in: containerSize, useEffectiveSize: cropPhase == .end)
         cropState = state
     }
 
     func clampCropState(in containerSize: CGSize) {
         var state = cropState
-        state.clamp(in: containerSize)
+        state.clamp(in: containerSize, useEffectiveSize: cropPhase == .end)
         cropState = state
     }
 }
@@ -632,7 +632,7 @@ struct CropOverlayState {
         )
     }
 
-    mutating func clamp(in containerSize: CGSize) {
+    mutating func clamp(in containerSize: CGSize, useEffectiveSize: Bool = false) {
         var rect = overlayRect(in: containerSize)
         let maxWidth = containerSize.width
         let maxHeight = containerSize.height
@@ -648,8 +648,18 @@ struct CropOverlayState {
             rect = overlayRect(in: containerSize)
         }
 
-        let clampedX = min(max(rect.midX, rect.width / 2), containerSize.width - rect.width / 2)
-        let clampedY = min(max(rect.midY, rect.height / 2), containerSize.height - rect.height / 2)
+        // The rectangle that must stay within the image. In the end phase the
+        // captured frame is the zoom-reduced (effective) rect, so the visible
+        // frame may travel all the way to the image edges instead of being held
+        // back by the larger base-size frame.
+        let bounds = useEffectiveSize ? effectiveOverlayRect(in: containerSize) : rect
+        let halfWidth = bounds.width / 2
+        let halfHeight = bounds.height / 2
+
+        let centerX = center.x * containerSize.width
+        let centerY = center.y * containerSize.height
+        let clampedX = min(max(centerX, halfWidth), containerSize.width - halfWidth)
+        let clampedY = min(max(centerY, halfHeight), containerSize.height - halfHeight)
         center = CGPoint(
             x: clampedX / containerSize.width,
             y: clampedY / containerSize.height

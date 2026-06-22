@@ -1,4 +1,5 @@
 import StoreKit
+import os
 
 /// Owns the single non-consumable unlock and exposes whether the user has it.
 /// StoreKit 2 is the source of truth for `isUnlocked`; the free-export counter
@@ -14,6 +15,8 @@ final class StoreManager: ObservableObject {
     @Published var purchaseError: String?
 
     private var updatesTask: Task<Void, Never>?
+
+    private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "StripArt", category: "Store")
 
     init() {
         updatesTask = listenForTransactions()
@@ -39,7 +42,11 @@ final class StoreManager: ObservableObject {
         do {
             let products = try await Product.products(for: [Self.unlockProductID])
             unlockProduct = products.first
+            if unlockProduct == nil {
+                Self.logger.error("No App Store product returned for \(Self.unlockProductID, privacy: .public)")
+            }
         } catch {
+            Self.logger.error("Product load failed: \(error.localizedDescription, privacy: .public)")
             purchaseError = "Could not load the store. Please try again."
         }
     }

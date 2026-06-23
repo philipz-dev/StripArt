@@ -13,7 +13,8 @@ struct ContentView: View {
 
                 if viewModel.showSaveConfirmation {
                     SaveSuccessOverlay(
-                        remainingFreeExports: store.isUnlocked ? nil : viewModel.remainingFreeExports
+                        remainingFreeExports: store.isUnlocked ? nil : viewModel.remainingFreeExports,
+                        store: store
                     ) {
                         viewModel.confirmSaveSuccess()
                     }

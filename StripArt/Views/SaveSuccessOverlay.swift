@@ -2,7 +2,12 @@ import SwiftUI
 
 struct SaveSuccessOverlay: View {
     var remainingFreeExports: Int?
+    @ObservedObject var store: StoreManager
     let onConfirm: () -> Void
+
+    private var showsUnlock: Bool {
+        remainingFreeExports != nil && !store.isUnlocked
+    }
 
     var body: some View {
         ZStack {
@@ -24,10 +29,23 @@ struct SaveSuccessOverlay: View {
                     }
                 }
 
-                Button(action: onConfirm) {
-                    Text("Done")
+                VStack(spacing: 12) {
+                    Button(action: onConfirm) {
+                        Text("Done")
+                    }
+                    .buttonStyle(SuccessButtonStyle())
+
+                    if showsUnlock {
+                        unlockButton
+
+                        if let error = store.purchaseError {
+                            Text(error)
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                                .multilineTextAlignment(.center)
+                        }
+                    }
                 }
-                .buttonStyle(SuccessButtonStyle())
             }
             .padding(28)
             .background(
@@ -62,6 +80,27 @@ struct SaveSuccessOverlay: View {
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
         }
+    }
+
+    // MARK: - Unlock
+
+    private var unlockButton: some View {
+        Button {
+            store.purchaseError = nil
+            Task { await store.purchase() }
+        } label: {
+            if store.purchaseInProgress {
+                ProgressView()
+                    .tint(BrandStyle.blue)
+                    .frame(maxWidth: .infinity)
+            } else {
+                Label("Unlock unlimited · \(store.displayPrice)", systemImage: "sparkles")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(BrandStyle.blue)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+        .disabled(store.purchaseInProgress)
     }
 
     // MARK: - Remaining exports badge

@@ -9,55 +9,78 @@ struct SaveSuccessOverlay: View {
             Color.black.opacity(0.55)
                 .ignoresSafeArea()
 
-            VStack(spacing: 24) {
-                Image(systemName: "photo.on.rectangle.angled")
-                    .font(.system(size: 44))
-                    .foregroundStyle(BrandStyle.blue)
-                    .symbolRenderingMode(.hierarchical)
+            VStack(spacing: 28) {
+                header
 
-                VStack(spacing: 10) {
-                    Text("Saved to Photo Library")
-                        .font(.title3.bold())
-                        .foregroundStyle(.primary)
-
+                VStack(spacing: 14) {
                     Text("Your animation has been saved to your Photo Library. You can import the GIF into your LED strip software.")
                         .font(.subheadline)
-                        .foregroundStyle(Color(red: 0.28, green: 0.32, blue: 0.38))
+                        .foregroundStyle(Color(.secondaryLabel))
                         .multilineTextAlignment(.center)
+                        .lineSpacing(1)
 
                     if let remainingFreeExports {
-                        Text(remainingMessage(for: remainingFreeExports))
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(remainingFreeExports == 0 ? Color.red : Color.orange)
-                            .multilineTextAlignment(.center)
+                        remainingBadge(for: remainingFreeExports)
                     }
                 }
 
                 Button(action: onConfirm) {
-                    Image(systemName: "checkmark")
+                    Text("Done")
                 }
-                .buttonStyle(
-                    CircleIconButtonStyle(
-                        gradient: BrandStyle.green,
-                        shadowColor: BrandStyle.greenShadow,
-                        diameter: 72,
-                        iconSize: 28
-                    )
-                )
-                .padding(.top, 4)
+                .buttonStyle(SuccessButtonStyle())
             }
             .padding(28)
             .background(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .fill(Color.white)
-                    .shadow(color: .black.opacity(0.08), radius: 18, x: 0, y: 10)
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .fill(Color(.systemBackground))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .strokeBorder(.white.opacity(0.8), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .strokeBorder(Color(.separator).opacity(0.35), lineWidth: 1)
             )
-            .padding(32)
+            .shadow(color: .black.opacity(0.18), radius: 24, x: 0, y: 12)
+            .padding(28)
         }
+    }
+
+    // MARK: - Header
+
+    private var header: some View {
+        VStack(spacing: 14) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 44, weight: .semibold))
+                .foregroundStyle(BrandStyle.blue)
+                .symbolRenderingMode(.hierarchical)
+                .frame(width: 80, height: 80)
+                .background(
+                    Circle()
+                        .fill(Color(red: 0.36, green: 0.68, blue: 1.0).opacity(0.14))
+                )
+
+            Text("Saved to Photo Library")
+                .font(.title3.weight(.bold))
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.center)
+        }
+    }
+
+    // MARK: - Remaining exports badge
+
+    @ViewBuilder
+    private func remainingBadge(for remaining: Int) -> some View {
+        let isExhausted = remaining == 0
+        let accent = isExhausted
+            ? Color(red: 0.80, green: 0.18, blue: 0.18)
+            : Color(red: 0.78, green: 0.45, blue: 0.05)
+        Label {
+            Text(remainingMessage(for: remaining))
+                .font(.footnote.weight(.semibold))
+        } icon: {
+            Image(systemName: isExhausted ? "lock.fill" : "gift.fill")
+                .font(.footnote)
+        }
+        .foregroundStyle(accent)
+        .multilineTextAlignment(.center)
     }
 
     private func remainingMessage(for remaining: Int) -> String {
@@ -68,5 +91,29 @@ struct SaveSuccessOverlay: View {
         } else {
             "\(remaining) free animations left."
         }
+    }
+}
+
+// MARK: - Done button
+
+private struct SuccessButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.headline.weight(.semibold))
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 15)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color(.systemGreen))
+            )
+            .shadow(
+                color: Color(.systemGreen).opacity(configuration.isPressed ? 0.10 : 0.20),
+                radius: configuration.isPressed ? 2 : 4,
+                x: 0,
+                y: configuration.isPressed ? 1 : 2
+            )
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
     }
 }

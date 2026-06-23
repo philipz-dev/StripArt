@@ -12,7 +12,9 @@ struct ContentView: View {
                 screenContent
 
                 if viewModel.showSaveConfirmation {
-                    SaveSuccessOverlay {
+                    SaveSuccessOverlay(
+                        remainingFreeExports: store.isUnlocked ? nil : viewModel.remainingFreeExports
+                    ) {
                         viewModel.confirmSaveSuccess()
                     }
                     .transition(.opacity)

@@ -153,30 +153,34 @@ struct DecisionButtons: View {
     }
 }
 
-/// Light blue ambient background used on every screen.
+/// Soft, elegant ambient background: a light blue/indigo tint at the top that
+/// fades into the system background toward the bottom. Used on every screen.
 struct AppBackground: View {
     var body: some View {
         ZStack {
-            Color(red: 0.97, green: 0.98, blue: 0.99)
+            Color(.systemBackground)
+
+            LinearGradient(
+                colors: [
+                    Color(red: 0.40, green: 0.47, blue: 0.95).opacity(0.12),
+                    Color(red: 0.40, green: 0.47, blue: 0.95).opacity(0.0)
+                ],
+                startPoint: .top,
+                endPoint: .center
+            )
 
             RadialGradient(
-                colors: [Color(red: 0.42, green: 0.7, blue: 1.0).opacity(0.22), .clear],
+                colors: [Color(red: 0.42, green: 0.7, blue: 1.0).opacity(0.10), .clear],
                 center: .topLeading,
                 startRadius: 0,
-                endRadius: 420
-            )
-            RadialGradient(
-                colors: [Color(red: 0.55, green: 0.45, blue: 1.0).opacity(0.14), .clear],
-                center: .bottomTrailing,
-                startRadius: 0,
-                endRadius: 460
+                endRadius: 380
             )
         }
         .ignoresSafeArea()
     }
 }
 
-/// Full-width, rounded, glossy gradient button.
+/// Full-width, rounded, flat modern button with a soft shadow.
 struct GradientButtonStyle: ButtonStyle {
     var gradient: LinearGradient = BrandStyle.blue
     var shadowColor: Color = BrandStyle.blueShadow
@@ -192,28 +196,18 @@ struct GradientButtonStyle: ButtonStyle {
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .fill(gradient)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .fill(
-                                LinearGradient(
-                                    colors: [.white.opacity(0.28), .clear],
-                                    startPoint: .top,
-                                    endPoint: .center
-                                )
-                            )
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .strokeBorder(.white.opacity(0.25), lineWidth: 1)
-                    )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(Color.black.opacity(0.06), lineWidth: 1)
             )
             .shadow(
-                color: shadowColor.opacity(configuration.isPressed ? 0.2 : 0.4),
-                radius: configuration.isPressed ? 6 : 12,
+                color: shadowColor.opacity(configuration.isPressed ? 0.10 : 0.18),
+                radius: configuration.isPressed ? 2 : 5,
                 x: 0,
-                y: configuration.isPressed ? 3 : 6
+                y: configuration.isPressed ? 1 : 2
             )
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
     }
 }
@@ -239,23 +233,74 @@ struct CircleIconButtonStyle: ButtonStyle {
                         Circle()
                             .fill(
                                 LinearGradient(
-                                    colors: [.white.opacity(0.38), .clear],
+                                    colors: [.white.opacity(0.18), .clear],
                                     startPoint: .top,
                                     endPoint: .center
                                 )
                             )
                     )
                     .overlay(
-                        Circle().strokeBorder(.white.opacity(strokeOpacity), lineWidth: 1)
+                        Circle().strokeBorder(.white.opacity(strokeOpacity * 0.6), lineWidth: 1)
                     )
             )
             .shadow(
-                color: shadowColor.opacity(configuration.isPressed ? 0.25 : 0.45),
-                radius: configuration.isPressed ? 7 : 13,
+                color: shadowColor.opacity(configuration.isPressed ? 0.12 : 0.22),
+                radius: configuration.isPressed ? 4 : 8,
                 x: 0,
-                y: configuration.isPressed ? 3 : 7
+                y: configuration.isPressed ? 2 : 4
             )
-            .scaleEffect(configuration.isPressed ? 0.93 : 1)
+            .scaleEffect(configuration.isPressed ? 0.94 : 1)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
+    }
+}
+
+// MARK: - Shared card + title styling
+
+/// Premium frosted card used to group related controls across screens.
+struct CardStyle: ViewModifier {
+    var padding: CGFloat = 20
+
+    func body(content: Content) -> some View {
+        content
+            .padding(padding)
+            .background(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(.regularMaterial)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .strokeBorder(Color(.separator).opacity(0.35), lineWidth: 1)
+            )
+            .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 4)
+    }
+}
+
+extension View {
+    func cardStyle(padding: CGFloat = 20) -> some View {
+        modifier(CardStyle(padding: padding))
+    }
+}
+
+/// A bold, rounded, brand-gradient screen title with an optional tracked,
+/// uppercase subtitle — the shared header look for every screen.
+struct ScreenTitle: View {
+    let title: String
+    var subtitle: String? = nil
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Text(title)
+                .font(.system(.title, design: .rounded).weight(.bold))
+                .foregroundStyle(BrandStyle.blue)
+                .multilineTextAlignment(.center)
+
+            if let subtitle {
+                Text(subtitle.uppercased())
+                    .font(.footnote.weight(.semibold))
+                    .tracking(2)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+        }
     }
 }

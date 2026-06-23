@@ -31,6 +31,7 @@
 		A100010026 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020026 /* PaywallView.swift */; };
 		A100010027 /* DebugReset.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020028 /* DebugReset.swift */; };
 		A100010028 /* StoreKitTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A100020029 /* StoreKitTest.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
+		A100010029 /* FreeExportsStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020031 /* FreeExportsStatusView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -61,7 +62,8 @@
 		A100020027 /* StripArt.storekit */ = {isa = PBXFileReference; lastKnownFileType = text.storekit; path = StripArt.storekit; sourceTree = "<group>"; };
 		A100020028 /* DebugReset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugReset.swift; sourceTree = "<group>"; };
 		A100020029 /* StoreKitTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKitTest.framework; path = System/Library/Frameworks/StoreKitTest.framework; sourceTree = SDKROOT; };
-		A100020030 /* TESTFLIGHT-CHECKLIST.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TESTFLIGHT-CHECKLIST.md; sourceTree = "<group>"; };
+		A100020030 /* TESTFLIGHT-CHECKLIST.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "TESTFLIGHT-CHECKLIST.md"; sourceTree = "<group>"; };
+		A100020031 /* FreeExportsStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeExportsStatusView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -76,12 +78,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		184376D02FE9E45B00085DB0 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				A100020029 /* StoreKitTest.framework */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 		A100040001 = {
 			isa = PBXGroup;
 			children = (
 				A100040002 /* StripArt */,
 				A100020030 /* TESTFLIGHT-CHECKLIST.md */,
 				A100040003 /* Products */,
+				184376D02FE9E45B00085DB0 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -140,6 +151,7 @@
 				A100020021 /* CameraPicker.swift */,
 				A100020023 /* TipsView.swift */,
 				A100020026 /* PaywallView.swift */,
+				A100020031 /* FreeExportsStatusView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -253,6 +265,7 @@
 				A100010023 /* TipsView.swift in Sources */,
 				A100010025 /* StoreManager.swift in Sources */,
 				A100010026 /* PaywallView.swift in Sources */,
+				A100010029 /* FreeExportsStatusView.swift in Sources */,
 				A100010027 /* DebugReset.swift in Sources */,
 				A100010011 /* ImageProcessor.swift in Sources */,
 				A100010012 /* GIFExporter.swift in Sources */,
@@ -334,7 +347,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = PB4953L2J4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -363,7 +376,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = PB4953L2J4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;

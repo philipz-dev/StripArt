@@ -22,9 +22,8 @@ struct FrameRateView: View {
     }
 
     private var header: some View {
-        VStack(spacing: 6) {
-            Text("Frame Rate")
-                .font(.title2.bold())
+        VStack(spacing: 10) {
+            ScreenTitle(title: "Frame Rate")
             Text("The maximum is a full bounce with 1-pixel steps. Lower it for fewer, larger steps.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -71,8 +70,7 @@ struct FrameRateView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .cardStyle()
     }
 
     private var actionButtons: some View {

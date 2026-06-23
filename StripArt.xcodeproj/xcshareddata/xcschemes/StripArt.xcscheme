@@ -52,7 +52,7 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "-resetTestingState"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
       <StoreKitConfigurationFileReference

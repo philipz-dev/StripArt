@@ -74,10 +74,13 @@ struct MainView: View {
         ZStack(alignment: .bottomTrailing) {
             ScrollView {
                 VStack(spacing: 28) {
-                    StripArtLogo()
-                        .padding(.top, 8)
+                    VStack(spacing: 8) {
+                        StripArtLogo()
+                            .padding(.top, 8)
 
-                    header
+                        header
+                    }
+                    .padding(.bottom, 8)
 
                     resolutionSection
 
@@ -96,24 +99,24 @@ struct MainView: View {
     // MARK: - Header
 
     private var header: some View {
-        VStack(spacing: 6) {
-            Text("LED Strip Animator")
-                .font(.system(.title2, design: .rounded).weight(.bold))
-                .foregroundStyle(.primary)
-        }
+        Text("LED Strip Animator".uppercased())
+            .font(.footnote.weight(.semibold))
+            .tracking(2)
+            .foregroundStyle(.secondary)
     }
 
     // MARK: - Resolution
 
     private var resolutionSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             stepHeader(number: "1", title: "Set LED bar resolution")
 
-            HStack(spacing: 16) {
+            HStack(alignment: .center, spacing: 14) {
                 resolutionField(title: "Height", text: $viewModel.heightText, field: .height)
-                Text("×")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                Image(systemName: "multiply")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+                    .offset(y: 11)
                 resolutionField(title: "Width", text: $viewModel.widthText, field: .width)
             }
 
@@ -123,7 +126,7 @@ struct MainView: View {
                     .foregroundStyle(.red)
             } else {
                 Text("Aspect ratio  \(viewModel.resolution.simplifiedAspectRatioLabel)")
-                    .font(.caption.weight(.medium))
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
         }
@@ -141,15 +144,15 @@ struct MainView: View {
                 .focused($focusedField, equals: field)
                 .multilineTextAlignment(.center)
                 .font(.title3.weight(.semibold))
-                .padding(.vertical, 12)
+                .padding(.vertical, 10)
                 .frame(maxWidth: .infinity)
                 .background(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(Color(red: 0.95, green: 0.96, blue: 0.98))
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color(.systemGray6))
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .strokeBorder(Color.black.opacity(0.06), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .strokeBorder(Color(.separator).opacity(0.5), lineWidth: 1)
                 )
         }
     }
@@ -181,7 +184,7 @@ struct MainView: View {
     private func photoActionLabel(title: String, systemImage: String) -> some View {
         VStack(spacing: 8) {
             Image(systemName: systemImage)
-                .font(.title3)
+                .font(.title2)
             Text(title)
                 .font(.system(.subheadline, design: .rounded).weight(.semibold))
         }
@@ -193,11 +196,9 @@ struct MainView: View {
 
     private func stepHeader(number: String, title: String) -> some View {
         HStack(spacing: 10) {
-            Text(number)
-                .font(.system(.subheadline, design: .rounded).weight(.bold))
-                .foregroundStyle(.white)
-                .frame(width: 26, height: 26)
-                .background(Circle().fill(brandGradient))
+            Image(systemName: "\(number).circle.fill")
+                .font(.system(.title3, design: .rounded))
+                .foregroundStyle(brandGradient)
             Text(title)
                 .font(.system(.headline, design: .rounded))
                 .foregroundStyle(.primary)
@@ -266,45 +267,9 @@ struct MainView: View {
             .fill(brandGradient)
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [.white.opacity(0.25), .clear],
-                            startPoint: .top,
-                            endPoint: .center
-                        )
-                    )
+                    .strokeBorder(Color.black.opacity(0.06), lineWidth: 1)
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(.white.opacity(0.25), lineWidth: 1)
-            )
-            .shadow(color: BrandStyle.blueShadow.opacity(0.4), radius: 12, x: 0, y: 6)
-    }
-}
-
-// MARK: - Shared white card styling
-
-private struct CardStyle: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(
-                        .white.shadow(.inner(color: .black.opacity(0.06), radius: 4, x: 0, y: 2))
-                    )
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .strokeBorder(.white.opacity(0.8), lineWidth: 1)
-            )
-            .shadow(color: .black.opacity(0.08), radius: 18, x: 0, y: 10)
-    }
-}
-
-private extension View {
-    func cardStyle() -> some View {
-        modifier(CardStyle())
+            .shadow(color: BrandStyle.blueShadow.opacity(0.18), radius: 5, x: 0, y: 2)
     }
 }
 

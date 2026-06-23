@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct SaveSuccessOverlay: View {
+    var remainingFreeExports: Int?
     let onConfirm: () -> Void
 
     var body: some View {
@@ -23,6 +24,13 @@ struct SaveSuccessOverlay: View {
                         .font(.subheadline)
                         .foregroundStyle(Color(red: 0.28, green: 0.32, blue: 0.38))
                         .multilineTextAlignment(.center)
+
+                    if let remainingFreeExports {
+                        Text(remainingMessage(for: remainingFreeExports))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(remainingFreeExports == 0 ? Color.red : Color.orange)
+                            .multilineTextAlignment(.center)
+                    }
                 }
 
                 Button(action: onConfirm) {
@@ -49,6 +57,16 @@ struct SaveSuccessOverlay: View {
                     .strokeBorder(.white.opacity(0.8), lineWidth: 1)
             )
             .padding(32)
+        }
+    }
+
+    private func remainingMessage(for remaining: Int) -> String {
+        if remaining == 0 {
+            "That was your last free animation."
+        } else if remaining == 1 {
+            "1 free animation left."
+        } else {
+            "\(remaining) free animations left."
         }
     }
 }

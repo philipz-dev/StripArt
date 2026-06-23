@@ -95,8 +95,10 @@ final class StripArtViewModel: ObservableObject {
     private var confirmedCropRect: CGRect = .zero
     /// End viewport (same size as start) in image pixel coordinates.
     private var endCropRect: CGRect = .zero
-    /// Normalized overlay center captured when the start phase is confirmed.
-    private var phaseStartCenter: CGPoint = CGPoint(x: 0.5, y: 0.5)
+    /// Photo transform captured when the start phase is confirmed, so the end
+    /// phase can start from the exact same view (no jump) and only pan from there.
+    private(set) var phaseStartOffset: CGSize = .zero
+    private(set) var phaseStartScale: CGFloat = 1.0
 
     var resolutionIsValid: Bool {
         resolution.isValid
@@ -141,54 +143,86 @@ final class StripArtViewModel: ObservableObject {
     func selectScrollDirection(_ direction: ScrollDirection) {
         scrollDirection = direction
         // When changing direction during the end phase, restart from the start
-        // position so movement is valid along the new axis.
+        // transform so movement is valid along the new axis.
         if cropPhase == .end {
             var state = cropState
-            state.center = phaseStartCenter
+            state.scale = phaseStartScale
+            state.offset = phaseStartOffset
             cropState = state
         }
     }
 
-    /// Checkmark in the start phase: lock the size, switch to choosing the end.
-    func confirmStartPhase(imageDisplayRect: CGRect, imagePixelSize: CGSize) {
-        let cropRect = cropState.cropRectInImageCoordinates(
-            imageDisplayRect: imageDisplayRect,
-            imagePixelSize: imagePixelSize
-        )
+    /// Checkmark in the start phase: lock the framed region, switch to the end.
+    func confirmStartPhase(geometry: CropGeometry) {
+        let cropRect = geometry.cropRectInImage(scale: cropState.scale, offset: cropState.offset)
         guard cropRect.width > 1, cropRect.height > 1 else {
             errorMessage = "Invalid selection. Please try again."
             return
         }
         confirmedCropRect = cropRect
-        phaseStartCenter = cropState.center
+        phaseStartOffset = cropState.offset
+        phaseStartScale = cropState.scale
         cropPhase = .end
     }
 
     /// Checkmark in the end phase: capture the end position and continue.
-    func confirmEndPhase(imageDisplayRect: CGRect, imagePixelSize: CGSize) {
-        guard let direction = scrollDirection else { return }
-        endCropRect = cropState.cropRectInImageCoordinates(
-            imageDisplayRect: imageDisplayRect,
-            imagePixelSize: imagePixelSize
-        )
+    func confirmEndPhase(geometry: CropGeometry) {
+        guard scrollDirection != nil else { return }
+        let endRect = geometry.cropRectInImage(scale: cropState.scale, offset: cropState.offset)
+        endCropRect = endRect
+        // The viewport animates from the start framing to the end framing. The
+        // pipeline direction is the way the viewport actually travels between
+        // them, derived from their delta so playback always matches the framing.
+        let direction = pipelineDirection(from: confirmedCropRect, to: endRect)
         screen = .frameRate
         prepareAnimation(direction: direction)
     }
 
-    /// Restricts the end-phase overlay to move only along (and in) the arrow's direction.
-    func constrainedEndCenter(_ proposed: CGPoint) -> CGPoint {
+    /// The direction the viewport travels from the start crop to the end crop.
+    private func pipelineDirection(from start: CGRect, to end: CGRect) -> ScrollDirection {
+        let axis = scrollDirection?.scrollAxis ?? .vertical
+        switch axis {
+        case .vertical:
+            return (end.minY - start.minY) >= 0 ? .down : .up
+        case .horizontal:
+            return (end.minX - start.minX) >= 0 ? .right : .left
+        }
+    }
+
+    /// Locks end-phase panning to the chosen axis (the perpendicular axis stays
+    /// at the start position) while allowing movement in either direction along
+    /// it. The actual scroll direction is derived from the movement itself.
+    func constrainedEndOffset(_ proposed: CGSize) -> CGSize {
         guard let direction = scrollDirection else { return proposed }
         switch direction.scrollAxis {
         case .vertical:
-            let y = direction == .down
-                ? max(phaseStartCenter.y, proposed.y)
-                : min(phaseStartCenter.y, proposed.y)
-            return CGPoint(x: phaseStartCenter.x, y: y)
+            return CGSize(width: phaseStartOffset.width, height: proposed.height)
         case .horizontal:
-            let x = direction == .right
-                ? max(phaseStartCenter.x, proposed.x)
-                : min(phaseStartCenter.x, proposed.x)
-            return CGPoint(x: x, y: phaseStartCenter.y)
+            return CGSize(width: proposed.width, height: phaseStartOffset.height)
+        }
+    }
+
+    /// Updates the highlighted arrow to match the way the user is panning, so
+    /// the arrow always reflects the resulting scroll direction. Movement of the
+    /// photo shifts the captured region the opposite way, hence the inversion.
+    private func updateEndDirection(for offset: CGSize) {
+        guard let direction = scrollDirection else { return }
+        let threshold: CGFloat = 1
+        switch direction.scrollAxis {
+        case .vertical:
+            let dy = offset.height - phaseStartOffset.height
+            if dy < -threshold {
+                scrollDirection = .down
+            } else if dy > threshold {
+                scrollDirection = .up
+            }
+        case .horizontal:
+            let dx = offset.width - phaseStartOffset.width
+            if dx < -threshold {
+                scrollDirection = .right
+            } else if dx > threshold {
+                scrollDirection = .left
+            }
         }
     }
 
@@ -504,10 +538,9 @@ final class StripArtViewModel: ObservableObject {
             return
         }
 
-        gifData = data
-
         do {
             try await PhotoLibrarySaver.saveGIF(data)
+            gifData = data
             if !unlocked {
                 consumeFreeExport()
             }
@@ -562,137 +595,181 @@ final class StripArtViewModel: ObservableObject {
         resolution.save()
     }
 
-    func mutateCropState(in containerSize: CGSize, _ mutate: (inout CropOverlayState) -> Void) {
+    /// Applies a clamped crop transform from the crop view's gestures.
+    func updateCropTransform(scale: CGFloat, offset: CGSize, geometry: CropGeometry) {
+        guard geometry.isValid else { return }
         var state = cropState
-        mutate(&state)
-        state.clamp(in: containerSize, useEffectiveSize: cropPhase == .end)
+        state.scale = geometry.clampedScale(scale)
+        let constrained = cropPhase == .end ? constrainedEndOffset(offset) : offset
+        state.offset = geometry.clampedOffset(scale: state.scale, offset: constrained)
         cropState = state
+
+        if cropPhase == .end {
+            updateEndDirection(for: state.offset)
+        }
     }
 
-    func clampCropState(in containerSize: CGSize) {
-        var state = cropState
-        state.clamp(in: containerSize, useEffectiveSize: cropPhase == .end)
-        cropState = state
+    /// Re-clamps the current transform to a (possibly new) layout.
+    func normalizeCropTransform(geometry: CropGeometry) {
+        updateCropTransform(scale: cropState.scale, offset: cropState.offset, geometry: geometry)
     }
 }
 
 // MARK: - Crop overlay state
 
+/// Transform of the photo under a fixed, centered selection frame.
+///
+/// The frame never moves: the user zooms (pinch) and pans the photo beneath it.
+/// `scale` is relative to the photo's fitted size (1 = photo fills the crop area)
+/// and `offset` translates the photo's center, in points, within the crop area.
 struct CropOverlayState {
-    var center: CGPoint = CGPoint(x: 0.5, y: 0.5)
-    var scale: CGFloat = 0.8
     var aspectRatio: CGFloat = LEDResolution.default.aspectRatio
-    /// Photo magnification in the start phase. 1 = no zoom (start position).
-    /// Higher values capture a smaller region while the on-screen frame stays put.
-    var zoom: CGFloat = 1.0
-
-    static let minZoom: CGFloat = 1.0
-    static let maxZoom: CGFloat = 4.0
+    var scale: CGFloat = 1.0
+    var offset: CGSize = .zero
 
     mutating func reset(for aspectRatio: CGFloat) {
         self.aspectRatio = aspectRatio
-        center = CGPoint(x: 0.5, y: 0.5)
-        scale = 0.8
-        zoom = 1.0
+        scale = 1.0
+        offset = .zero
+    }
+}
+
+// MARK: - Crop geometry
+
+/// Pure layout math for the fixed-frame crop UI. Built fresh from the current
+/// layout so the view and the view model always agree on where the photo, the
+/// selection frame, and the captured pixels are.
+struct CropGeometry {
+    /// On-screen area the photo occupies at `scale == 1` (also the clip bounds).
+    let containerSize: CGSize
+    /// Source image size in pixels (CGImage dimensions).
+    let imagePixelSize: CGSize
+    /// Selection frame aspect ratio (LED width / height).
+    let aspectRatio: CGFloat
+    /// Target LED resolution, used to cap zoom at one source pixel per LED pixel.
+    let resolution: LEDResolution
+    /// Empty space kept between the frame and the photo edges at `scale == 1`.
+    let marginFraction: CGFloat
+
+    init(
+        containerSize: CGSize,
+        imagePixelSize: CGSize,
+        aspectRatio: CGFloat,
+        resolution: LEDResolution,
+        marginFraction: CGFloat = 0.08
+    ) {
+        self.containerSize = containerSize
+        self.imagePixelSize = imagePixelSize
+        self.aspectRatio = aspectRatio
+        self.resolution = resolution
+        self.marginFraction = marginFraction
     }
 
-    func overlayRect(in containerSize: CGSize) -> CGRect {
-        let containerAspect = containerSize.width / max(containerSize.height, 1)
-        var overlayWidth: CGFloat
-        var overlayHeight: CGFloat
+    var isValid: Bool {
+        containerSize.width > 0 && containerSize.height > 0 &&
+        imagePixelSize.width > 0 && imagePixelSize.height > 0 &&
+        aspectRatio > 0
+    }
 
+    /// The fixed selection frame, centered in the crop area with margin.
+    var frame: CGRect {
+        guard isValid else { return .zero }
+        let containerAspect = containerSize.width / containerSize.height
+        var w: CGFloat
+        var h: CGFloat
         if aspectRatio > containerAspect {
-            overlayWidth = containerSize.width * scale
-            overlayHeight = overlayWidth / aspectRatio
+            w = containerSize.width * (1 - 2 * marginFraction)
+            h = w / aspectRatio
         } else {
-            overlayHeight = containerSize.height * scale
-            overlayWidth = overlayHeight * aspectRatio
+            h = containerSize.height * (1 - 2 * marginFraction)
+            w = h * aspectRatio
         }
-
-        let originX = center.x * containerSize.width - overlayWidth / 2
-        let originY = center.y * containerSize.height - overlayHeight / 2
-
-        return CGRect(x: originX, y: originY, width: overlayWidth, height: overlayHeight)
-    }
-
-    /// The region actually captured: the base frame shrunk by the zoom factor
-    /// about its center. In the start phase the base-size frame drawn over the
-    /// zoomed photo shows exactly this region; in the end phase this is drawn
-    /// directly, so the frame grows/shrinks with the zoom.
-    func effectiveOverlayRect(in containerSize: CGSize) -> CGRect {
-        let base = overlayRect(in: containerSize)
-        let z = max(1, zoom)
-        let width = base.width / z
-        let height = base.height / z
         return CGRect(
-            x: base.midX - width / 2,
-            y: base.midY - height / 2,
-            width: width,
-            height: height
+            x: (containerSize.width - w) / 2,
+            y: (containerSize.height - h) / 2,
+            width: w,
+            height: h
         )
     }
 
-    mutating func clamp(in containerSize: CGSize, useEffectiveSize: Bool = false) {
-        var rect = overlayRect(in: containerSize)
-        let maxWidth = containerSize.width
-        let maxHeight = containerSize.height
+    /// Smallest scale at which the photo still fully covers the frame.
+    var minScale: CGFloat {
+        guard isValid else { return 1 }
+        let f = frame
+        return max(f.width / containerSize.width, f.height / containerSize.height)
+    }
 
-        if rect.width > maxWidth {
-            let s = maxWidth / rect.width
-            scale *= s
-            rect = overlayRect(in: containerSize)
-        }
-        if rect.height > maxHeight {
-            let s = maxHeight / rect.height
-            scale *= s
-            rect = overlayRect(in: containerSize)
-        }
+    /// Scale at which exactly the LED resolution of source pixels fits the frame
+    /// (one source pixel per LED pixel). Zooming further would show fewer pixels.
+    var resolutionLimitScale: CGFloat {
+        guard isValid, resolution.width > 0 else { return minScale }
+        return frame.width * imagePixelSize.width
+            / (containerSize.width * CGFloat(resolution.width))
+    }
 
-        // The rectangle that must stay within the image. In the end phase the
-        // captured frame is the zoom-reduced (effective) rect, so the visible
-        // frame may travel all the way to the image edges instead of being held
-        // back by the larger base-size frame.
-        let bounds = useEffectiveSize ? effectiveOverlayRect(in: containerSize) : rect
-        let halfWidth = bounds.width / 2
-        let halfHeight = bounds.height / 2
+    /// Largest scale the user may reach, never below `minScale`.
+    var maxScale: CGFloat {
+        max(minScale, resolutionLimitScale)
+    }
 
-        let centerX = center.x * containerSize.width
-        let centerY = center.y * containerSize.height
-        let clampedX = min(max(centerX, halfWidth), containerSize.width - halfWidth)
-        let clampedY = min(max(centerY, halfHeight), containerSize.height - halfHeight)
-        center = CGPoint(
-            x: clampedX / containerSize.width,
-            y: clampedY / containerSize.height
+    /// True when even fully zoomed out the frame holds fewer source pixels than
+    /// the LED resolution, so the result will be upscaled (a quality warning).
+    var photoBelowResolution: Bool {
+        guard isValid else { return false }
+        return resolutionLimitScale < minScale - 0.0001
+    }
+
+    func clampedScale(_ scale: CGFloat) -> CGFloat {
+        min(max(scale, minScale), maxScale)
+    }
+
+    /// The displayed photo rectangle for a given transform, in crop-area points.
+    func photoRect(scale: CGFloat, offset: CGSize) -> CGRect {
+        let size = CGSize(width: containerSize.width * scale, height: containerSize.height * scale)
+        let center = CGPoint(
+            x: containerSize.width / 2 + offset.width,
+            y: containerSize.height / 2 + offset.height
+        )
+        return CGRect(
+            x: center.x - size.width / 2,
+            y: center.y - size.height / 2,
+            width: size.width,
+            height: size.height
         )
     }
 
-    func cropRectInImageCoordinates(
-        imageDisplayRect: CGRect,
-        imagePixelSize: CGSize
-    ) -> CGRect {
-        let displaySize = imageDisplayRect.size
-        guard displaySize.width > 0, displaySize.height > 0 else { return .zero }
+    /// Clamps the offset so the photo always fully covers the selection frame.
+    func clampedOffset(scale: CGFloat, offset: CGSize) -> CGSize {
+        guard isValid else { return .zero }
+        let f = frame
+        let halfX = max(0, (containerSize.width * scale - f.width) / 2)
+        let halfY = max(0, (containerSize.height * scale - f.height) / 2)
+        return CGSize(
+            width: min(max(offset.width, -halfX), halfX),
+            height: min(max(offset.height, -halfY), halfY)
+        )
+    }
 
-        // Overlay is expressed in local image-view coordinates (origin 0,0).
-        // The effective (zoom-adjusted) rect is the region actually captured.
-        let overlay = effectiveOverlayRect(in: displaySize)
+    /// The pixels under the frame, in source-image pixel coordinates.
+    func cropRectInImage(scale: CGFloat, offset: CGSize) -> CGRect {
+        guard isValid else { return .zero }
+        let photo = photoRect(scale: scale, offset: offset)
+        guard photo.width > 0, photo.height > 0 else { return .zero }
+        let f = frame
+
         let relative = CGRect(
-            x: overlay.minX / displaySize.width,
-            y: overlay.minY / displaySize.height,
-            width: overlay.width / displaySize.width,
-            height: overlay.height / displaySize.height
+            x: (f.minX - photo.minX) / photo.width,
+            y: (f.minY - photo.minY) / photo.height,
+            width: f.width / photo.width,
+            height: f.height / photo.height
         )
-
         let pixelRect = CGRect(
-            x: relative.origin.x * imagePixelSize.width,
-            y: relative.origin.y * imagePixelSize.height,
+            x: relative.minX * imagePixelSize.width,
+            y: relative.minY * imagePixelSize.height,
             width: relative.width * imagePixelSize.width,
             height: relative.height * imagePixelSize.height
         )
-
-        return pixelRect.intersection(
-            CGRect(origin: .zero, size: imagePixelSize)
-        )
+        return pixelRect.intersection(CGRect(origin: .zero, size: imagePixelSize))
     }
 }
 

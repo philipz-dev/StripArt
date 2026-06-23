@@ -17,26 +17,24 @@ struct PreviewView: View {
                     .foregroundStyle(.secondary)
             }
 
-            if !store.isUnlocked {
-                freeExportsBadge
-            }
-
             Spacer()
 
             actionButtons
         }
         .padding(24)
-        .navigationTitle("Preview")
-        .navigationBarBackButtonHidden(true)
+        .navigationBarHidden(true)
         .sheet(item: $shareItem) { item in
             ActivityShareSheet(items: [item.url])
         }
     }
 
     private var header: some View {
-        Text("Pixel-perfect preview at LED resolution")
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
+        VStack(spacing: 10) {
+            ScreenTitle(title: "Preview")
+            Text("Pixel-perfect preview at LED resolution")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
     }
 
     @ViewBuilder
@@ -64,6 +62,14 @@ struct PreviewView: View {
 
     private var actionButtons: some View {
         VStack(spacing: 12) {
+            if !store.isUnlocked {
+                FreeExportsStatusView(
+                    remaining: viewModel.remainingFreeExports,
+                    limit: viewModel.freeExportLimit,
+                    compact: true
+                )
+            }
+
             HStack(spacing: 16) {
                 Button(role: .cancel) {
                     viewModel.cancelPreview()
@@ -114,18 +120,6 @@ struct PreviewView: View {
 
     private var needsUnlock: Bool {
         !store.isUnlocked && !viewModel.hasFreeExportsLeft
-    }
-
-    private var freeExportsBadge: some View {
-        let remaining = viewModel.remainingFreeExports
-        let isEmpty = remaining == 0
-        return Text(isEmpty
-             ? "No free animations left"
-             : "Free animations left: \(remaining)")
-            .font(.title3.weight(.bold))
-            .foregroundStyle(isEmpty ? Color.red : Color.orange)
-            .multilineTextAlignment(.center)
-            .frame(maxWidth: .infinity)
     }
 
     private func saveOrPrompt() {

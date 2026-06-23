@@ -5,8 +5,7 @@ struct AppearanceView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Text("Appearance")
-                .font(.title2.bold())
+            ScreenTitle(title: "Appearance")
 
             StillPreviewArea(viewModel: viewModel)
 
@@ -54,8 +53,7 @@ struct AppearanceView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             }
-            .padding()
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+            .cardStyle()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

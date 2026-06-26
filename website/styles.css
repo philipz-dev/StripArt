@@ -425,6 +425,12 @@ a:hover {
   color: transparent;
 }
 
+/* Center the lone last card when the grid has an odd count. */
+.screenshot-card:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+  justify-self: center;
+}
+
 /* CSS mock screens */
 .mock-ui {
   height: 100%;

@@ -9,7 +9,18 @@
   <link rel="apple-touch-icon" href="assets/icon-1024.png">
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="startup-open">
+  <div id="startup-overlay" class="startup-overlay" role="dialog" aria-modal="true" aria-label="StripArt introduction — tap to continue">
+    <div class="startup-stage">
+      <video class="startup-video" autoplay loop muted playsinline preload="auto" aria-hidden="true">
+        <source src="assets/startup-animation.mp4?v=20260629" type="video/mp4">
+      </video>
+      <p class="startup-headline">Easily convert your pictures to stunning LED animations!</p>
+      <p class="startup-phone-label">Select frame:</p>
+      <p class="startup-hint">Tap anywhere to continue</p>
+    </div>
+  </div>
+
   <header class="site-header">
     <div class="container nav">
       <a class="brand" href="index.html">
@@ -322,5 +333,25 @@
       </div>
     </div>
   </footer>
+  <script>
+    (function () {
+      var overlay = document.getElementById("startup-overlay");
+      if (!overlay) return;
+
+      function dismiss() {
+        overlay.classList.add("is-dismissed");
+        document.body.classList.remove("startup-open");
+        overlay.setAttribute("aria-hidden", "true");
+      }
+
+      overlay.addEventListener("click", dismiss);
+      document.addEventListener("keydown", function (event) {
+        if (!overlay.classList.contains("is-dismissed") && (event.key === "Escape" || event.key === "Enter" || event.key === " ")) {
+          event.preventDefault();
+          dismiss();
+        }
+      });
+    })();
+  </script>
 </body>
 </html>

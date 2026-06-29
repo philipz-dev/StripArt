@@ -51,6 +51,12 @@ enum BrandStyle {
     static let blueShadow = Color(red: 0.1, green: 0.3, blue: 0.7)
     static let greenShadow = Color(red: 0.1, green: 0.45, blue: 0.25)
     static let redShadow = Color(red: 0.7, green: 0.1, blue: 0.15)
+
+    // Sky gradient sampled once from startup-animation.mp4 (headline band → lower fade).
+    static let skyTop = Color(red: 175 / 255, green: 215 / 255, blue: 240 / 255)
+    static let skyMid = Color(red: 0.93, green: 0.96, blue: 1.0)
+    static let skyBottom = Color(red: 238 / 255, green: 244 / 255, blue: 246 / 255)
+    static let skyGlow = Color(red: 0.36, green: 0.68, blue: 1.0)
 }
 
 /// A square black frame with a grey bevel line that gives a 3D look: vertical
@@ -153,27 +159,21 @@ struct DecisionButtons: View {
     }
 }
 
-/// Soft, elegant ambient background: a light blue/indigo tint at the top that
-/// fades into the system background toward the bottom. Used on every screen.
+/// Shared sky background matching the startup animation — used on every screen.
 struct AppBackground: View {
     var body: some View {
         ZStack {
-            Color(.systemBackground)
-
             LinearGradient(
-                colors: [
-                    Color(red: 0.40, green: 0.47, blue: 0.95).opacity(0.12),
-                    Color(red: 0.40, green: 0.47, blue: 0.95).opacity(0.0)
-                ],
+                colors: [BrandStyle.skyTop, BrandStyle.skyMid, BrandStyle.skyBottom],
                 startPoint: .top,
-                endPoint: .center
+                endPoint: .bottom
             )
 
             RadialGradient(
-                colors: [Color(red: 0.42, green: 0.7, blue: 1.0).opacity(0.10), .clear],
-                center: .topLeading,
+                colors: [BrandStyle.skyGlow.opacity(0.35), .clear],
+                center: UnitPoint(x: 0.5, y: 0.18),
                 startRadius: 0,
-                endRadius: 380
+                endRadius: 280
             )
         }
         .ignoresSafeArea()

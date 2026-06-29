@@ -13,7 +13,7 @@ struct StartupOverlayView: View {
             let videoHeight = min(geometry.size.height, geometry.size.width / videoAspect)
 
             ZStack {
-                startupBackground
+                AppBackground()
 
                 ZStack {
                     LoopingVideoView(resourceName: "startup-animation")
@@ -51,28 +51,6 @@ struct StartupOverlayView: View {
         .ignoresSafeArea()
         .accessibilityAddTraits(.isButton)
         .accessibilityLabel("StripArt introduction. Double tap to continue.")
-    }
-
-    private var startupBackground: some View {
-        ZStack {
-            LinearGradient(
-                colors: [
-                    Color(red: 0.72, green: 0.85, blue: 0.97),
-                    Color(red: 0.93, green: 0.96, blue: 1.0),
-                    Color(red: 0.97, green: 0.98, blue: 1.0)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-
-            RadialGradient(
-                colors: [Color(red: 0.36, green: 0.68, blue: 1.0).opacity(0.35), .clear],
-                center: .init(x: 0.5, y: 0.18),
-                startRadius: 0,
-                endRadius: 280
-            )
-        }
-        .ignoresSafeArea()
     }
 }
 

@@ -3,6 +3,7 @@ import SwiftUI
 struct PreviewView: View {
     @ObservedObject var viewModel: StripArtViewModel
     @ObservedObject var store: StoreManager
+    @ObservedObject var gallery: GalleryStore
     @State private var shareItem: ShareGIFItem?
 
     var body: some View {
@@ -39,25 +40,24 @@ struct PreviewView: View {
 
     @ViewBuilder
     private var previewArea: some View {
-        Rectangle()
-            .fill(Color.black)
-            .aspectRatio(viewModel.resolution.aspectRatio, contentMode: .fit)
-            .frame(maxWidth: .infinity)
-            .overlay {
-                if viewModel.isProcessing || viewModel.isReprocessingDither {
-                    ProgressView(viewModel.isReprocessingDither ? "Applying dither…" : "Processing…")
-                        .tint(.white)
-                        .foregroundStyle(.white)
-                } else if !viewModel.frames.isEmpty {
-                    let frame = viewModel.frames[viewModel.currentFrameIndex]
-                    Image(uiImage: frame)
-                        .interpolation(.none)
-                        .resizable()
-                        .aspectRatio(viewModel.resolution.aspectRatio, contentMode: .fit)
-                }
+        ZStack {
+            Color.black
+
+            if viewModel.isProcessing || viewModel.isReprocessingDither {
+                ProgressView(viewModel.isReprocessingDither ? "Applying dither…" : "Processing…")
+                    .tint(.white)
+                    .foregroundStyle(.white)
+            } else if !viewModel.frames.isEmpty,
+                      let cgFrame = viewModel.frames[viewModel.currentFrameIndex].cgImage {
+                LEDBarView(image: cgFrame)
             }
-            .overlay(Picture3DBorder())
-            .frame(maxHeight: 280)
+        }
+        // Apply the aspect ratio to the whole stack so the black backdrop, the
+        // image, and the border all share the exact same rectangle — they line
+        // up for any resolution, including portrait ones.
+        .aspectRatio(viewModel.resolution.aspectRatio, contentMode: .fit)
+        .overlay(Picture3DBorder())
+        .frame(maxWidth: .infinity, maxHeight: 280)
     }
 
     private var actionButtons: some View {
@@ -124,7 +124,7 @@ struct PreviewView: View {
 
     private func saveOrPrompt() {
         if store.isUnlocked || viewModel.hasFreeExportsLeft {
-            Task { await viewModel.saveGIF(unlocked: store.isUnlocked) }
+            Task { await viewModel.saveGIF(unlocked: store.isUnlocked, gallery: gallery) }
         } else {
             store.purchaseError = nil
             viewModel.showPaywall = true

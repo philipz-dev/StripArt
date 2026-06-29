@@ -517,8 +517,9 @@ final class StripArtViewModel: ObservableObject {
 
     /// Saves the animation. When the user has not unlocked unlimited exports,
     /// this consumes one of the free exports; the caller is responsible for
-    /// presenting the paywall first when no free exports remain.
-    func saveGIF(unlocked: Bool) async {
+    /// presenting the paywall first when no free exports remain. On success the
+    /// GIF is also added to the app's gallery.
+    func saveGIF(unlocked: Bool, gallery: GalleryStore) async {
         guard !cgFrames.isEmpty else { return }
         guard unlocked || hasFreeExportsLeft else {
             showPaywall = true
@@ -541,6 +542,7 @@ final class StripArtViewModel: ObservableObject {
         do {
             try await PhotoLibrarySaver.saveGIF(data)
             gifData = data
+            gallery.add(data: data, resolution: resolution)
             if !unlocked {
                 consumeFreeExport()
             }
@@ -650,19 +652,25 @@ struct CropGeometry {
     let resolution: LEDResolution
     /// Empty space kept between the frame and the photo edges at `scale == 1`.
     let marginFraction: CGFloat
+    /// Vertical position of the frame's center as a fraction of the crop-area
+    /// height (0 = top, 0.5 = centered, 1 = bottom). Clamped so the frame keeps
+    /// the margin at the top and bottom edges.
+    let frameCenterFractionY: CGFloat
 
     init(
         containerSize: CGSize,
         imagePixelSize: CGSize,
         aspectRatio: CGFloat,
         resolution: LEDResolution,
-        marginFraction: CGFloat = 0.08
+        marginFraction: CGFloat = 0.08,
+        frameCenterFractionY: CGFloat = 0.5
     ) {
         self.containerSize = containerSize
         self.imagePixelSize = imagePixelSize
         self.aspectRatio = aspectRatio
         self.resolution = resolution
         self.marginFraction = marginFraction
+        self.frameCenterFractionY = frameCenterFractionY
     }
 
     var isValid: Bool {
@@ -671,7 +679,9 @@ struct CropGeometry {
         aspectRatio > 0
     }
 
-    /// The fixed selection frame, centered in the crop area with margin.
+    /// The fixed selection frame, both horizontally and vertically centered in
+    /// the crop area (see `frameCenterFractionY`), keeping the margin at top and
+    /// bottom.
     var frame: CGRect {
         guard isValid else { return .zero }
         let containerAspect = containerSize.width / containerSize.height
@@ -684,9 +694,13 @@ struct CropGeometry {
             h = containerSize.height * (1 - 2 * marginFraction)
             w = h * aspectRatio
         }
+        let minY = containerSize.height * marginFraction
+        let maxY = containerSize.height * (1 - marginFraction) - h
+        let desiredY = containerSize.height * frameCenterFractionY - h / 2
+        let y = min(max(desiredY, minY), max(minY, maxY))
         return CGRect(
             x: (containerSize.width - w) / 2,
-            y: (containerSize.height - h) / 2,
+            y: y,
             width: w,
             height: h
         )
@@ -739,15 +753,33 @@ struct CropGeometry {
     }
 
     /// Clamps the offset so the photo always fully covers the selection frame.
+    /// The photo is centered on the crop area plus `offset`, while the frame may
+    /// sit off-center, so the allowed range is asymmetric.
     func clampedOffset(scale: CGFloat, offset: CGSize) -> CGSize {
         guard isValid else { return .zero }
         let f = frame
-        let halfX = max(0, (containerSize.width * scale - f.width) / 2)
-        let halfY = max(0, (containerSize.height * scale - f.height) / 2)
+        let photoW = containerSize.width * scale
+        let photoH = containerSize.height * scale
+        let centerX = containerSize.width / 2
+        let centerY = containerSize.height / 2
+
+        // offset range that keeps the photo covering the frame on each axis.
+        let lowerX = f.maxX - photoW / 2 - centerX
+        let upperX = f.minX + photoW / 2 - centerX
+        let lowerY = f.maxY - photoH / 2 - centerY
+        let upperY = f.minY + photoH / 2 - centerY
+
         return CGSize(
-            width: min(max(offset.width, -halfX), halfX),
-            height: min(max(offset.height, -halfY), halfY)
+            width: clamp(offset.width, lowerX, upperX),
+            height: clamp(offset.height, lowerY, upperY)
         )
+    }
+
+    /// Clamps `value` into `[lower, upper]`, falling back to the midpoint if the
+    /// range is inverted (photo smaller than the frame on that axis).
+    private func clamp(_ value: CGFloat, _ lower: CGFloat, _ upper: CGFloat) -> CGFloat {
+        guard lower <= upper else { return (lower + upper) / 2 }
+        return min(max(value, lower), upper)
     }
 
     /// The pixels under the frame, in source-image pixel coordinates.

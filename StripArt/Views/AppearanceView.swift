@@ -44,14 +44,20 @@ struct AppearanceView: View {
                 .font(.headline)
 
             VStack(alignment: .leading, spacing: 8) {
-                Slider(value: contrastBinding, in: -1...1, step: 0.05)
+                Slider(value: contrastPercentBinding, in: 0...100, step: 1)
                 HStack {
                     Text("Less")
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Text("\(contrastDisplayValue)")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
                     Spacer()
                     Text("More")
+                        .foregroundStyle(.primary)
                 }
                 .font(.caption)
-                .foregroundStyle(.secondary)
             }
             .cardStyle()
         }
@@ -65,11 +71,15 @@ struct AppearanceView: View {
         )
     }
 
-    private var contrastBinding: Binding<Double> {
+    private var contrastDisplayValue: Int {
+        Int(min(max((viewModel.contrast + 1) * 50, 0), 100))
+    }
+
+    private var contrastPercentBinding: Binding<Double> {
         Binding(
-            get: { viewModel.contrast },
+            get: { Double(contrastDisplayValue) },
             set: { newValue in
-                viewModel.contrast = newValue
+                viewModel.contrast = (newValue / 50) - 1
                 viewModel.renderStillPreview()
             }
         )

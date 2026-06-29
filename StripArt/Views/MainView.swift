@@ -3,6 +3,8 @@ import SwiftUI
 
 struct MainView: View {
     @ObservedObject var viewModel: StripArtViewModel
+    @ObservedObject var gallery: GalleryStore
+    var onOpenGallery: () -> Void
     @AppStorage("hideTipsOnPhotoAction") private var hideTipsOnPhotoAction = false
     @State private var showCamera = false
     @State private var showPhotoPicker = false
@@ -93,7 +95,23 @@ struct MainView: View {
             if hideTipsOnPhotoAction {
                 tipsHelpButton
             }
+
+            if !gallery.isEmpty {
+                galleryButton
+            }
         }
+    }
+
+    private var galleryButton: some View {
+        Button(action: onOpenGallery) {
+            Image(systemName: "photo.on.rectangle.angled")
+                .font(.system(size: 26, weight: .semibold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(BrandStyle.blue)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+        .accessibilityLabel("Gallery")
     }
 
     // MARK: - Header

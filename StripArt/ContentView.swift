@@ -3,6 +3,9 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var viewModel = StripArtViewModel()
     @StateObject private var store = StoreManager()
+    @StateObject private var gallery = GalleryStore()
+    @State private var showGallery = false
+    @State private var showStartupOverlay = true
 
     var body: some View {
         NavigationStack {
@@ -10,6 +13,16 @@ struct ContentView: View {
                 AppBackground()
 
                 screenContent
+
+                if showStartupOverlay {
+                    StartupOverlayView {
+                        withAnimation(.easeOut(duration: 0.45)) {
+                            showStartupOverlay = false
+                        }
+                    }
+                    .transition(.opacity)
+                    .zIndex(100)
+                }
 
                 if viewModel.showSaveConfirmation {
                     SaveSuccessOverlay(
@@ -28,7 +41,7 @@ struct ContentView: View {
                         onClose: { viewModel.showPaywall = false },
                         onUnlocked: {
                             viewModel.showPaywall = false
-                            Task { await viewModel.saveGIF(unlocked: true) }
+                            Task { await viewModel.saveGIF(unlocked: true, gallery: gallery) }
                         }
                     )
                     .transition(.opacity)
@@ -37,6 +50,10 @@ struct ContentView: View {
             .animation(.easeInOut(duration: 0.25), value: viewModel.screen)
             .animation(.easeInOut(duration: 0.25), value: viewModel.showSaveConfirmation)
             .animation(.easeInOut(duration: 0.25), value: viewModel.showPaywall)
+            .animation(.easeOut(duration: 0.45), value: showStartupOverlay)
+        }
+        .fullScreenCover(isPresented: $showGallery) {
+            GalleryView(gallery: gallery)
         }
         .alert("Error", isPresented: errorBinding) {
             Button("OK", role: .cancel) {
@@ -48,7 +65,7 @@ struct ContentView: View {
         #if DEBUG
         .task {
             if ProcessInfo.processInfo.arguments.contains("-resetTestingState") {
-                await DebugReset.performFullReset(store: store, viewModel: viewModel)
+                await DebugReset.performFullReset(store: store, viewModel: viewModel, gallery: gallery)
             }
         }
         #endif
@@ -58,7 +75,7 @@ struct ContentView: View {
     private var screenContent: some View {
         switch viewModel.screen {
         case .main:
-            MainView(viewModel: viewModel)
+            MainView(viewModel: viewModel, gallery: gallery, onOpenGallery: { showGallery = true })
         case .crop:
             CropView(viewModel: viewModel)
         case .frameRate:
@@ -66,7 +83,7 @@ struct ContentView: View {
         case .appearance:
             AppearanceView(viewModel: viewModel)
         case .preview:
-            PreviewView(viewModel: viewModel, store: store)
+            PreviewView(viewModel: viewModel, store: store, gallery: gallery)
         }
     }
 

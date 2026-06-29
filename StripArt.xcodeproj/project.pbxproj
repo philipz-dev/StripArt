@@ -32,6 +32,14 @@
 		A100010027 /* DebugReset.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020028 /* DebugReset.swift */; };
 		A100010028 /* StoreKitTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A100020029 /* StoreKitTest.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		A100010029 /* FreeExportsStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020031 /* FreeExportsStatusView.swift */; };
+		A100010030 /* SavedAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020032 /* SavedAnimation.swift */; };
+		A100010031 /* GalleryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020033 /* GalleryStore.swift */; };
+		A100010032 /* GalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020034 /* GalleryView.swift */; };
+		A100010033 /* LEDBarPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020035 /* LEDBarPreview.swift */; };
+		A100010034 /* StartupOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020036 /* StartupOverlayView.swift */; };
+		A100010035 /* startup-animation.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = A100020037 /* startup-animation.mp4 */; };
+		A100010036 /* FeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020038 /* FeatureFlags.swift */; };
+		A100010037 /* LEDSimulationRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020039 /* LEDSimulationRenderer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -64,6 +72,14 @@
 		A100020029 /* StoreKitTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKitTest.framework; path = System/Library/Frameworks/StoreKitTest.framework; sourceTree = SDKROOT; };
 		A100020030 /* TESTFLIGHT-CHECKLIST.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "TESTFLIGHT-CHECKLIST.md"; sourceTree = "<group>"; };
 		A100020031 /* FreeExportsStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeExportsStatusView.swift; sourceTree = "<group>"; };
+		A100020032 /* SavedAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedAnimation.swift; sourceTree = "<group>"; };
+		A100020033 /* GalleryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryStore.swift; sourceTree = "<group>"; };
+		A100020034 /* GalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryView.swift; sourceTree = "<group>"; };
+		A100020035 /* LEDBarPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LEDBarPreview.swift; sourceTree = "<group>"; };
+		A100020036 /* StartupOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupOverlayView.swift; sourceTree = "<group>"; };
+		A100020037 /* startup-animation.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "startup-animation.mp4"; sourceTree = "<group>"; };
+		A100020038 /* FeatureFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlags.swift; sourceTree = "<group>"; };
+		A100020039 /* LEDSimulationRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LEDSimulationRenderer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -101,6 +117,7 @@
 			children = (
 				A100020001 /* StripArtApp.swift */,
 				A100020002 /* ContentView.swift */,
+				A100020038 /* FeatureFlags.swift */,
 				A100040004 /* Models */,
 				A100040005 /* ViewModels */,
 				A100040006 /* Views */,
@@ -126,6 +143,7 @@
 				A100020018 /* DitherAlgorithm.swift */,
 				A100020003 /* LEDResolution.swift */,
 				A100020004 /* ScrollDirection.swift */,
+				A100020032 /* SavedAnimation.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -152,6 +170,9 @@
 				A100020023 /* TipsView.swift */,
 				A100020026 /* PaywallView.swift */,
 				A100020031 /* FreeExportsStatusView.swift */,
+				A100020034 /* GalleryView.swift */,
+				A100020035 /* LEDBarPreview.swift */,
+				A100020036 /* StartupOverlayView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -164,6 +185,8 @@
 				A100020013 /* PhotoLibrarySaver.swift */,
 				A100020025 /* StoreManager.swift */,
 				A100020028 /* DebugReset.swift */,
+				A100020033 /* GalleryStore.swift */,
+				A100020039 /* LEDSimulationRenderer.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -173,6 +196,7 @@
 			children = (
 				A100020014 /* Assets.xcassets */,
 				A100020027 /* StripArt.storekit */,
+				A100020037 /* startup-animation.mp4 */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -237,6 +261,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A100010014 /* Assets.xcassets in Resources */,
+				A100010035 /* startup-animation.mp4 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -266,6 +291,13 @@
 				A100010025 /* StoreManager.swift in Sources */,
 				A100010026 /* PaywallView.swift in Sources */,
 				A100010029 /* FreeExportsStatusView.swift in Sources */,
+				A100010030 /* SavedAnimation.swift in Sources */,
+				A100010031 /* GalleryStore.swift in Sources */,
+				A100010032 /* GalleryView.swift in Sources */,
+				A100010033 /* LEDBarPreview.swift in Sources */,
+				A100010034 /* StartupOverlayView.swift in Sources */,
+				A100010036 /* FeatureFlags.swift in Sources */,
+				A100010037 /* LEDSimulationRenderer.swift in Sources */,
 				A100010027 /* DebugReset.swift in Sources */,
 				A100010011 /* ImageProcessor.swift in Sources */,
 				A100010012 /* GIFExporter.swift in Sources */,
@@ -347,7 +379,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 13;
 				DEVELOPMENT_TEAM = PB4953L2J4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -376,7 +408,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 13;
 				DEVELOPMENT_TEAM = PB4953L2J4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;

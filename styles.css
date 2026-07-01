@@ -4,8 +4,13 @@
   --blue-shadow: rgba(13, 69, 199, 0.35);
   --green-light: #4dc780;
   --green-dark: #1a8c52;
-  --bg-top: #eef5ff;
-  --bg-bottom: #f8fbff;
+  /* Sky gradient — sampled from startup-animation.mp4 */
+  --sky-top: #afd7f0;
+  --sky-mid: #edf5ff;
+  --sky-bottom: #eef4f6;
+  --sky-glow: rgba(92, 173, 255, 0.35);
+  --bg-top: var(--sky-top);
+  --bg-bottom: var(--sky-bottom);
   --text: #1a1f2e;
   --text-muted: #5c6578;
   --card: rgba(255, 255, 255, 0.82);
@@ -34,8 +39,8 @@ body.startup-open {
   display: grid;
   place-items: center;
   background:
-    radial-gradient(circle at 50% 18%, rgba(92, 173, 255, 0.35), transparent 55%),
-    linear-gradient(180deg, #b8d9f8 0%, #eef5ff 48%, #f8fbff 100%);
+    radial-gradient(circle at 50% 18%, var(--sky-glow), transparent 55%),
+    linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 48%, var(--sky-bottom) 100%);
   cursor: pointer;
   transition: opacity 0.45s ease, visibility 0.45s ease;
 }
@@ -63,24 +68,31 @@ body.startup-open {
 
 .startup-headline {
   position: absolute;
-  top: 4.8%;
+  top: 10.5%;
   left: 7%;
   right: 7%;
   margin: 0;
   text-align: center;
   font-family: var(--font);
   font-weight: 700;
-  font-size: clamp(0.95rem, 4.1vw, 1.35rem);
+  font-size: clamp(1.08rem, 4.8vw, 1.58rem);
   line-height: 1.28;
   letter-spacing: -0.02em;
   color: #fff;
-  text-shadow: 0 2px 14px rgba(13, 69, 199, 0.28);
+  -webkit-text-stroke: 0.45px rgba(13, 69, 199, 0.42);
+  paint-order: stroke fill;
+  text-shadow:
+    -1px -1px 0 rgba(13, 69, 199, 0.38),
+    1px -1px 0 rgba(13, 69, 199, 0.38),
+    -1px 1px 0 rgba(13, 69, 199, 0.38),
+    1px 1px 0 rgba(13, 69, 199, 0.38),
+    0 3px 16px rgba(13, 69, 199, 0.32);
   pointer-events: none;
 }
 
 .startup-phone-label {
   position: absolute;
-  top: 15.8%;
+  top: 28.5%;
   left: 21%;
   right: 21%;
   margin: 0;
@@ -97,29 +109,16 @@ body.startup-open {
   pointer-events: none;
 }
 
-.startup-hint {
-  position: absolute;
-  bottom: 2.5%;
-  left: 0;
-  right: 0;
-  margin: 0;
-  text-align: center;
-  font-size: clamp(0.72rem, 2.6vw, 0.85rem);
-  font-weight: 500;
-  color: rgba(13, 69, 199, 0.55);
-  pointer-events: none;
-}
-
 @media (max-width: 640px) {
   .startup-headline {
-    top: 3.8%;
+    top: 9.5%;
     left: 5%;
     right: 5%;
-    font-size: clamp(0.88rem, 4.8vw, 1.1rem);
+    font-size: clamp(1rem, 5.2vw, 1.28rem);
   }
 
   .startup-phone-label {
-    top: 15.2%;
+    top: 27.5%;
     left: 18%;
     right: 18%;
   }
@@ -133,9 +132,8 @@ body {
   font-family: var(--font);
   color: var(--text);
   background:
-    radial-gradient(circle at 15% 10%, rgba(92, 173, 255, 0.22), transparent 42%),
-    radial-gradient(circle at 85% 0%, rgba(255, 120, 180, 0.12), transparent 38%),
-    linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+    radial-gradient(circle at 50% 18%, var(--sky-glow), transparent 55%),
+    linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 48%, var(--sky-bottom) 100%);
   min-height: 100vh;
   line-height: 1.55;
 }

@@ -487,11 +487,16 @@ a:hover {
   display: flex;
   justify-content: center;
   padding: 0 0 48px;
+  max-width: 960px;
+  margin: 0 auto;
 }
 
 .featured-video .phone-frame {
-  width: min(370px, 92vw);
+  width: 100%;
+  max-width: 402px;
   margin: 0 auto;
+  padding: 12px;
+  border-radius: 42px;
 }
 
 .featured-video .phone-frame::before {
@@ -809,7 +814,8 @@ a:hover {
     gap: 32px;
   }
 
-  .screenshot-card {
+  .screenshot-card,
+  .featured-video .phone-frame {
     max-width: min(402px, 100%);
   }
 
@@ -827,7 +833,8 @@ a:hover {
     grid-template-columns: 1fr;
   }
 
-  .screenshot-card {
+  .screenshot-card,
+  .featured-video .phone-frame {
     max-width: min(360px, 100%);
   }
 }

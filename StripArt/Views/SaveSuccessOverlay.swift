@@ -1,13 +1,12 @@
 import SwiftUI
 
 struct SaveSuccessOverlay: View {
-    var remainingFreeExports: Int?
+    let remainingFreeExports: Int
+    let isUnlocked: Bool
     @ObservedObject var store: StoreManager
     let onConfirm: () -> Void
 
-    private var showsUnlock: Bool {
-        remainingFreeExports != nil && !store.isUnlocked
-    }
+    private var showsFreemiumInfo: Bool { !isUnlocked }
 
     var body: some View {
         ZStack {
@@ -24,18 +23,15 @@ struct SaveSuccessOverlay: View {
                         .multilineTextAlignment(.center)
                         .lineSpacing(1)
 
-                    if let remainingFreeExports {
+                    if showsFreemiumInfo {
                         remainingBadge(for: remainingFreeExports)
+                    } else {
+                        unlockedBadge
                     }
                 }
 
                 VStack(spacing: 12) {
-                    Button(action: onConfirm) {
-                        Text("Done")
-                    }
-                    .buttonStyle(SuccessButtonStyle())
-
-                    if showsUnlock {
+                    if showsFreemiumInfo {
                         unlockButton
 
                         if let error = store.purchaseError {
@@ -45,6 +41,11 @@ struct SaveSuccessOverlay: View {
                                 .multilineTextAlignment(.center)
                         }
                     }
+
+                    Button(action: onConfirm) {
+                        Text("Done")
+                    }
+                    .buttonStyle(SuccessButtonStyle())
                 }
             }
             .padding(28)
@@ -130,6 +131,18 @@ struct SaveSuccessOverlay: View {
         } else {
             "\(remaining) free animations left."
         }
+    }
+
+    private var unlockedBadge: some View {
+        Label {
+            Text("Unlimited exports unlocked")
+                .font(.footnote.weight(.semibold))
+        } icon: {
+            Image(systemName: "checkmark.seal.fill")
+                .font(.footnote)
+        }
+        .foregroundStyle(BrandStyle.blue)
+        .multilineTextAlignment(.center)
     }
 }
 

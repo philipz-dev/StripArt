@@ -3,6 +3,7 @@ import SwiftUI
 
 struct MainView: View {
     @ObservedObject var viewModel: StripArtViewModel
+    @ObservedObject var store: StoreManager
     @ObservedObject var gallery: GalleryStore
     var onOpenGallery: () -> Void
     @AppStorage("hideTipsOnPhotoAction") private var hideTipsOnPhotoAction = false
@@ -38,12 +39,6 @@ struct MainView: View {
         .onChange(of: viewModel.widthText) { viewModel.syncResolutionFromText() }
         .onChange(of: focusedField) { _, newValue in
             if newValue == nil { viewModel.normalizeResolutionText() }
-        }
-        .toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button("Done") { focusedField = nil }
-            }
         }
         .fullScreenCover(isPresented: $showCamera) {
             CameraPicker { image in
@@ -84,6 +79,12 @@ struct MainView: View {
                     }
                     .padding(.bottom, 8)
 
+                    ExportAllowanceView(
+                        store: store,
+                        remaining: viewModel.remainingFreeExports,
+                        limit: viewModel.freeExportLimit
+                    )
+
                     resolutionSection
 
                     photoSection
@@ -91,6 +92,7 @@ struct MainView: View {
                 .padding(24)
                 .padding(.bottom, hideTipsOnPhotoAction ? 56 : 0)
             }
+            .scrollDismissesKeyboard(.interactively)
 
             if hideTipsOnPhotoAction {
                 tipsHelpButton
@@ -241,6 +243,7 @@ struct MainView: View {
     }
 
     private func beginPhotoAction(_ action: PendingPhotoAction) {
+        focusedField = nil
         if hideTipsOnPhotoAction {
             performPhotoAction(action)
         } else {

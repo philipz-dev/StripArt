@@ -40,6 +40,16 @@ struct StartupOverlayView: View {
                         Spacer(minLength: 0)
                     }
                     .frame(width: videoWidth, height: videoHeight)
+
+                    VStack(spacing: 0) {
+                        Spacer(minLength: 0)
+
+                        Text("Tap to continue")
+                            .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                            .foregroundStyle(BrandStyle.blue)
+                            .padding(.bottom, videoHeight * 0.055)
+                    }
+                    .frame(width: videoWidth, height: videoHeight)
                 }
                 .frame(width: videoWidth, height: videoHeight)
                 .clipShape(RoundedRectangle(cornerRadius: 0))

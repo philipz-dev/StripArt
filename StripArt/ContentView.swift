@@ -5,7 +5,8 @@ struct ContentView: View {
     @StateObject private var store = StoreManager()
     @StateObject private var gallery = GalleryStore()
     @State private var showGallery = false
-    @State private var showStartupOverlay = true
+    @AppStorage("hasSeenStartupAnimation") private var hasSeenStartupAnimation = false
+    @State private var showStartupOverlay = false
 
     var body: some View {
         NavigationStack {
@@ -16,6 +17,7 @@ struct ContentView: View {
 
                 if showStartupOverlay {
                     StartupOverlayView {
+                        hasSeenStartupAnimation = true
                         withAnimation(.easeOut(duration: 0.45)) {
                             showStartupOverlay = false
                         }
@@ -26,11 +28,11 @@ struct ContentView: View {
 
                 if viewModel.showSaveConfirmation {
                     SaveSuccessOverlay(
-                        remainingFreeExports: store.isUnlocked ? nil : viewModel.remainingFreeExports,
-                        store: store
-                    ) {
-                        viewModel.confirmSaveSuccess()
-                    }
+                        remainingFreeExports: viewModel.remainingFreeExports,
+                        isUnlocked: store.isUnlocked,
+                        store: store,
+                        onConfirm: { viewModel.confirmSaveSuccess() }
+                    )
                     .transition(.opacity)
                 }
 
@@ -51,6 +53,11 @@ struct ContentView: View {
             .animation(.easeInOut(duration: 0.25), value: viewModel.showSaveConfirmation)
             .animation(.easeInOut(duration: 0.25), value: viewModel.showPaywall)
             .animation(.easeOut(duration: 0.45), value: showStartupOverlay)
+        }
+        .onAppear {
+            if !hasSeenStartupAnimation {
+                showStartupOverlay = true
+            }
         }
         .fullScreenCover(isPresented: $showGallery) {
             GalleryView(gallery: gallery)
@@ -75,7 +82,7 @@ struct ContentView: View {
     private var screenContent: some View {
         switch viewModel.screen {
         case .main:
-            MainView(viewModel: viewModel, gallery: gallery, onOpenGallery: { showGallery = true })
+            MainView(viewModel: viewModel, store: store, gallery: gallery, onOpenGallery: { showGallery = true })
         case .crop:
             CropView(viewModel: viewModel)
         case .frameRate:

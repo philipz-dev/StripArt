@@ -62,13 +62,12 @@ struct PreviewView: View {
 
     private var actionButtons: some View {
         VStack(spacing: 12) {
-            if !store.isUnlocked {
-                FreeExportsStatusView(
-                    remaining: viewModel.remainingFreeExports,
-                    limit: viewModel.freeExportLimit,
-                    compact: true
-                )
-            }
+            ExportAllowanceView(
+                store: store,
+                remaining: viewModel.remainingFreeExports,
+                limit: viewModel.freeExportLimit,
+                compact: true
+            )
 
             HStack(spacing: 16) {
                 Button(role: .cancel) {

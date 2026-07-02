@@ -9,17 +9,7 @@
   <link rel="apple-touch-icon" href="assets/icon-1024.png">
   <link rel="stylesheet" href="styles.css">
 </head>
-<body class="startup-open">
-  <div id="startup-overlay" class="startup-overlay" role="dialog" aria-modal="true" aria-label="StripArt introduction — tap to continue">
-    <div class="startup-stage">
-      <video class="startup-video" autoplay loop muted playsinline preload="auto" aria-hidden="true">
-        <source src="assets/startup-animation.mp4?v=20260629" type="video/mp4">
-      </video>
-      <p class="startup-headline">Easily convert your pictures to stunning LED animations!</p>
-      <p class="startup-phone-label">Select frame:</p>
-    </div>
-  </div>
-
+<body>
   <header class="site-header">
     <div class="container nav">
       <a class="brand" href="index.html">
@@ -57,6 +47,17 @@
       </div>
     </section>
 
+    <section class="featured-video container" aria-label="StripArt LED animation preview">
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <video autoplay loop muted playsinline preload="auto" aria-label="StripArt LED scroll animation">
+            <source src="assets/screenshots/05-preview.mp4?v=20260703" type="video/mp4">
+            <source src="assets/screenshots/05-preview.mov?v=20260703" type="video/quicktime">
+          </video>
+        </div>
+      </div>
+    </section>
+
     <section class="section" id="screenshots">
       <div class="container">
         <div class="section-header">
@@ -70,12 +71,12 @@
             <div class="phone-frame">
               <div class="phone-screen">
                 <img
-                  src="assets/screenshots/01-setup-804w.png?v=20260627"
-                  srcset="assets/screenshots/01-setup-804w.png?v=20260627 804w, assets/screenshots/01-setup.png?v=20260627 1242w"
+                  src="assets/screenshots/step-02-804w.png?v=20260703"
+                  srcset="assets/screenshots/step-02-804w.png?v=20260703 804w, assets/screenshots/step-02.png?v=20260703 1320w"
                   sizes="(max-width: 640px) 336px, 378px"
                   width="402"
                   height="874"
-                  alt="StripArt setup — set LED resolution (96×96) and import a photo"
+                  alt="StripArt setup — set LED resolution and import a photo"
                   decoding="async"
                 >
               </div>
@@ -83,12 +84,29 @@
           </figure>
 
           <figure class="screenshot-card">
-            <figcaption>2. Animation</figcaption>
+            <figcaption>2. Tips</figcaption>
             <div class="phone-frame">
               <div class="phone-screen">
                 <img
-                  src="assets/screenshots/02-animation-804w.png?v=20260627"
-                  srcset="assets/screenshots/02-animation-804w.png?v=20260627 804w, assets/screenshots/02-animation.png?v=20260627 1242w"
+                  src="assets/screenshots/step-02-5-804w.png?v=20260703"
+                  srcset="assets/screenshots/step-02-5-804w.png?v=20260703 804w, assets/screenshots/step-02-5.png?v=20260703 1320w"
+                  sizes="(max-width: 640px) 336px, 378px"
+                  width="402"
+                  height="874"
+                  alt="StripArt tips — LED resolution and animation guidance"
+                  decoding="async"
+                >
+              </div>
+            </div>
+          </figure>
+
+          <figure class="screenshot-card">
+            <figcaption>3. Starting position</figcaption>
+            <div class="phone-frame">
+              <div class="phone-screen">
+                <img
+                  src="assets/screenshots/step-03-804w.png?v=20260703"
+                  srcset="assets/screenshots/step-03-804w.png?v=20260703 804w, assets/screenshots/step-03.png?v=20260703 1320w"
                   sizes="(max-width: 640px) 336px, 378px"
                   width="402"
                   height="874"
@@ -100,12 +118,29 @@
           </figure>
 
           <figure class="screenshot-card">
-            <figcaption>3. Appearance</figcaption>
+            <figcaption>4. Ending position</figcaption>
             <div class="phone-frame">
               <div class="phone-screen">
                 <img
-                  src="assets/screenshots/03-appearance-804w.png?v=20260627"
-                  srcset="assets/screenshots/03-appearance-804w.png?v=20260627 804w, assets/screenshots/03-appearance.png?v=20260627 1242w"
+                  src="assets/screenshots/step-03-5-804w.png?v=20260703"
+                  srcset="assets/screenshots/step-03-5-804w.png?v=20260703 804w, assets/screenshots/step-03-5.png?v=20260703 1320w"
+                  sizes="(max-width: 640px) 336px, 378px"
+                  width="402"
+                  height="874"
+                  alt="StripArt animation — define the ending view"
+                  decoding="async"
+                >
+              </div>
+            </div>
+          </figure>
+
+          <figure class="screenshot-card">
+            <figcaption>5. Appearance</figcaption>
+            <div class="phone-frame">
+              <div class="phone-screen">
+                <img
+                  src="assets/screenshots/step-04-804w.png?v=20260703"
+                  srcset="assets/screenshots/step-04-804w.png?v=20260703 804w, assets/screenshots/step-04.png?v=20260703 1320w"
                   sizes="(max-width: 640px) 336px, 378px"
                   width="402"
                   height="874"
@@ -117,24 +152,24 @@
           </figure>
 
           <figure class="screenshot-card">
-            <figcaption>4. Preview</figcaption>
+            <figcaption>6. Preview</figcaption>
             <div class="phone-frame">
               <div class="phone-screen">
                 <video autoplay loop muted playsinline preload="auto" aria-label="StripArt preview animation">
-                  <source src="assets/screenshots/04-preview.mp4?v=20260627" type="video/mp4">
-                  <source src="assets/screenshots/04-preview.mov?v=20260627" type="video/quicktime">
+                  <source src="assets/screenshots/step-04-5.mp4?v=20260704" type="video/mp4">
+                  <source src="assets/screenshots/step-04-5.mov?v=20260704" type="video/quicktime">
                 </video>
               </div>
             </div>
           </figure>
 
           <figure class="screenshot-card">
-            <figcaption>5. LED scroll</figcaption>
+            <figcaption>7. LED scroll</figcaption>
             <div class="phone-frame">
               <div class="phone-screen">
                 <video autoplay loop muted playsinline preload="auto" aria-label="StripArt LED scroll animation">
-                  <source src="assets/screenshots/05-preview.mp4?v=20260627" type="video/mp4">
-                  <source src="assets/screenshots/05-preview.mov?v=20260627" type="video/quicktime">
+                  <source src="assets/screenshots/step-05.mp4?v=20260703" type="video/mp4">
+                  <source src="assets/screenshots/step-05.mov?v=20260703" type="video/quicktime">
                 </video>
               </div>
             </div>
@@ -332,25 +367,5 @@
       </div>
     </div>
   </footer>
-  <script>
-    (function () {
-      var overlay = document.getElementById("startup-overlay");
-      if (!overlay) return;
-
-      function dismiss() {
-        overlay.classList.add("is-dismissed");
-        document.body.classList.remove("startup-open");
-        overlay.setAttribute("aria-hidden", "true");
-      }
-
-      overlay.addEventListener("click", dismiss);
-      document.addEventListener("keydown", function (event) {
-        if (!overlay.classList.contains("is-dismissed") && (event.key === "Escape" || event.key === "Enter" || event.key === " ")) {
-          event.preventDefault();
-          dismiss();
-        }
-      });
-    })();
-  </script>
 </body>
 </html>

@@ -7,6 +7,7 @@ enum DebugReset {
     static func performFullReset(store: StoreManager, viewModel: StripArtViewModel, gallery: GalleryStore) async {
         UserDefaults.standard.removeObject(forKey: "freeExportsUsed")
         UserDefaults.standard.removeObject(forKey: "hideTipsOnPhotoAction")
+        UserDefaults.standard.removeObject(forKey: "hasSeenStartupAnimation")
 
         viewModel.resetTestingState()
         gallery.removeAllForTesting()

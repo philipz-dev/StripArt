@@ -40,6 +40,7 @@
 		A100010035 /* startup-animation.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = A100020037 /* startup-animation.mp4 */; };
 		A100010036 /* FeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020038 /* FeatureFlags.swift */; };
 		A100010037 /* LEDSimulationRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020039 /* LEDSimulationRenderer.swift */; };
+		A100010038 /* ExportAllowanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020040 /* ExportAllowanceView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -80,6 +81,7 @@
 		A100020037 /* startup-animation.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "startup-animation.mp4"; sourceTree = "<group>"; };
 		A100020038 /* FeatureFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlags.swift; sourceTree = "<group>"; };
 		A100020039 /* LEDSimulationRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LEDSimulationRenderer.swift; sourceTree = "<group>"; };
+		A100020040 /* ExportAllowanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportAllowanceView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -170,6 +172,7 @@
 				A100020023 /* TipsView.swift */,
 				A100020026 /* PaywallView.swift */,
 				A100020031 /* FreeExportsStatusView.swift */,
+				A100020040 /* ExportAllowanceView.swift */,
 				A100020034 /* GalleryView.swift */,
 				A100020035 /* LEDBarPreview.swift */,
 				A100020036 /* StartupOverlayView.swift */,
@@ -291,6 +294,7 @@
 				A100010025 /* StoreManager.swift in Sources */,
 				A100010026 /* PaywallView.swift in Sources */,
 				A100010029 /* FreeExportsStatusView.swift in Sources */,
+				A100010038 /* ExportAllowanceView.swift in Sources */,
 				A100010030 /* SavedAnimation.swift in Sources */,
 				A100010031 /* GalleryStore.swift in Sources */,
 				A100010032 /* GalleryView.swift in Sources */,
@@ -379,7 +383,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 15;
 				DEVELOPMENT_TEAM = PB4953L2J4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -408,7 +412,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 15;
 				DEVELOPMENT_TEAM = PB4953L2J4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;

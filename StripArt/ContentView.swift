@@ -58,7 +58,6 @@ struct ContentView: View {
             if !hasSeenStartupAnimation {
                 showStartupOverlay = true
             }
-            Task { await store.syncEntitlementsWithAppStore() }
         }
         .fullScreenCover(isPresented: $showGallery) {
             GalleryView(gallery: gallery)

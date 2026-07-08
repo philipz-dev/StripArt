@@ -22,7 +22,10 @@ final class StoreManager: ObservableObject {
         updatesTask = listenForTransactions()
         Task {
             await loadProducts()
-            await syncEntitlementsWithAppStore()
+            // Read the local entitlement cache only. This never prompts for an
+            // Apple ID login; a full `AppStore.sync()` is reserved for explicit
+            // purchase and restore actions.
+            await refreshEntitlements()
         }
     }
 
@@ -49,17 +52,6 @@ final class StoreManager: ObservableObject {
             Self.logger.error("Product load failed: \(error.localizedDescription, privacy: .public)")
             purchaseError = "Could not load the store. Please try again."
         }
-    }
-
-    /// Syncs with the App Store, then re-reads entitlements. Call on launch so a
-    /// cleared sandbox purchase history in App Store Connect is picked up on device.
-    func syncEntitlementsWithAppStore() async {
-        do {
-            try await AppStore.sync()
-        } catch {
-            Self.logger.error("App Store sync failed: \(error.localizedDescription, privacy: .public)")
-        }
-        await refreshEntitlements()
     }
 
     /// Re-checks the App Store for an active entitlement to the unlock.

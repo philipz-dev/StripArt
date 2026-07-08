@@ -64,14 +64,17 @@ final class StripArtViewModel: ObservableObject {
 
     // MARK: - Frame rate
 
-    /// Number of frames the user wants in the bounce. Defaults to the full
-    /// 1-pixel-per-step count and can only be decreased, never increased.
+    /// Number of frames the user wants in the bounce. Defaults to the sweet
+    /// spot (~100) when available; can only be decreased, never increased.
     @Published var frameCount: Int = 0
     @Published private(set) var maxFrameCount: Int = 0
     @Published private(set) var isPreparingFrames = false
 
     /// Smallest meaningful animation length.
     let minFrameCount = 2
+
+    /// Default slider position on the frame-rate screen.
+    private let sweetSpotFrameCount = 100
 
     init() {
         let saved = LEDResolution.loadSaved() ?? LEDResolution.default
@@ -419,7 +422,7 @@ final class StripArtViewModel: ObservableObject {
 
             fullCgFrames = generated
             maxFrameCount = generated.count
-            frameCount = generated.count
+            frameCount = defaultFrameCount(maxAvailable: generated.count)
             isPreparingFrames = false
 
             if generated.isEmpty {
@@ -477,6 +480,13 @@ final class StripArtViewModel: ObservableObject {
     }
 
     /// Evenly picks `count` frames from `frames`, preserving the first and last.
+    /// Picks 100 frames when the animation has at least that many; otherwise the
+    /// maximum available (closest value to the sweet spot).
+    private func defaultFrameCount(maxAvailable: Int) -> Int {
+        guard maxAvailable > 0 else { return 0 }
+        return min(max(minFrameCount, sweetSpotFrameCount), maxAvailable)
+    }
+
     private static func subsample(_ frames: [CGImage], to count: Int) -> [CGImage] {
         guard count > 0 else { return [] }
         guard frames.count > count else { return frames }

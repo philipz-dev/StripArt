@@ -17,9 +17,12 @@ final class StripArtViewModel: ObservableObject {
     @Published var cropState = CropOverlayState()
     @Published var scrollDirection: ScrollDirection? = .down
     @Published var ditherAlgorithm: DitherAlgorithm = .ordered
+    @Published var playbackMode: PlaybackMode = .bounce
 
     /// Contrast applied before dithering. -1 = flat, 0 = unchanged, 1 = strong.
     @Published var contrast: Double = 0
+    /// Brightness applied before dithering. -1 = darker, 0 = unchanged, 1 = brighter.
+    @Published var brightness: Double = 0
     /// Single, non-animated frame shown on the dithering and contrast screens.
     @Published private(set) var stillPreview: UIImage?
     @Published private(set) var isRenderingStill = false
@@ -102,8 +105,20 @@ final class StripArtViewModel: ObservableObject {
     /// phase can start from the exact same view (no jump) and only pan from there.
     private(set) var phaseStartOffset: CGSize = .zero
     private(set) var phaseStartScale: CGFloat = 1.0
+    /// Photo transform captured when the end phase is confirmed, so returning
+    /// from later screens can restore the chosen end framing.
+    private var phaseEndOffset: CGSize = .zero
+    private var phaseEndScale: CGFloat = 1.0
+    private var pendingEndTransformRestore = false
 
     var resolutionIsValid: Bool {
+        resolution.isValid
+    }
+
+    static let photoResolutionMin = LEDResolution.minDimension
+    static let photoResolutionMax = LEDResolution.maxDimension
+
+    var resolutionIsValidForPhotoImport: Bool {
         resolution.isValid
     }
 
@@ -121,19 +136,29 @@ final class StripArtViewModel: ObservableObject {
     func goToCrop() {
         normalizeResolutionText()
         guard canProceedFromMain else { return }
+        contrast = 0
+        brightness = 0
         var state = cropState
         state.reset(for: resolution.aspectRatio)
         cropState = state
+        endCropRect = .zero
+        phaseEndOffset = .zero
+        phaseEndScale = 1.0
+        pendingEndTransformRestore = false
         cropPhase = .start
         scrollDirection = .down
         screen = .crop
     }
 
     /// X button on the crop screen.
-    func cancelCrop() {
+    func cancelCrop(geometry: CropGeometry? = nil) {
         if cropPhase == .end {
-            // Step back to choosing the start size & position.
             cropPhase = .start
+            endCropRect = .zero
+            phaseEndOffset = .zero
+            phaseEndScale = 1.0
+            pendingEndTransformRestore = false
+            restoreStartPhaseTransform(geometry: geometry)
         } else {
             // Going back from the start phase returns to the setup screen, so
             // the selected photo is cleared (there is no photo review step).
@@ -143,16 +168,65 @@ final class StripArtViewModel: ObservableObject {
         }
     }
 
-    func selectScrollDirection(_ direction: ScrollDirection) {
-        scrollDirection = direction
-        // When changing direction during the end phase, restart from the start
-        // transform so movement is valid along the new axis.
-        if cropPhase == .end {
-            var state = cropState
-            state.scale = phaseStartScale
-            state.offset = phaseStartOffset
-            cropState = state
+    /// Puts the photo back exactly where it was when the start phase was confirmed.
+    private func restoreStartPhaseTransform(geometry: CropGeometry?) {
+        let scale = phaseStartScale
+        let offset: CGSize
+        if let geometry, confirmedCropRect != .zero {
+            offset = geometry.offset(for: confirmedCropRect, scale: scale)
+        } else {
+            offset = phaseStartOffset
         }
+
+        cropState = CropOverlayState(
+            aspectRatio: cropState.aspectRatio,
+            scale: scale,
+            offset: offset
+        )
+
+        if let geometry {
+            normalizeCropTransform(geometry: geometry)
+        }
+    }
+
+    /// Puts the photo back exactly where it was when the end phase was confirmed.
+    private func restoreEndPhaseTransform(geometry: CropGeometry?) {
+        let scale = phaseEndScale
+        let offset: CGSize
+        if let geometry, endCropRect != .zero {
+            offset = geometry.offset(for: endCropRect, scale: scale)
+        } else {
+            offset = phaseEndOffset
+        }
+
+        cropState = CropOverlayState(
+            aspectRatio: cropState.aspectRatio,
+            scale: scale,
+            offset: offset
+        )
+
+        if let geometry {
+            normalizeCropTransform(geometry: geometry)
+        }
+    }
+
+    /// Called when the crop view lays out after returning from a later screen.
+    func consumeEndTransformRestore(geometry: CropGeometry) {
+        guard pendingEndTransformRestore, cropPhase == .end else { return }
+        pendingEndTransformRestore = false
+        restoreEndPhaseTransform(geometry: geometry)
+    }
+
+    func selectScrollDirection(_ direction: ScrollDirection) {
+        guard cropPhase == .start else { return }
+        scrollDirection = direction
+    }
+
+    /// Picks the movement axis during the start phase.
+    func selectScrollAxis(_ axis: ScrollAxis) {
+        guard cropPhase == .start else { return }
+        guard scrollDirection?.scrollAxis != axis else { return }
+        selectScrollDirection(axis.defaultDirection)
     }
 
     /// Checkmark in the start phase: lock the framed region, switch to the end.
@@ -165,6 +239,11 @@ final class StripArtViewModel: ObservableObject {
         confirmedCropRect = cropRect
         phaseStartOffset = cropState.offset
         phaseStartScale = cropState.scale
+        cropState = CropOverlayState(
+            aspectRatio: cropState.aspectRatio,
+            scale: phaseStartScale,
+            offset: phaseStartOffset
+        )
         cropPhase = .end
     }
 
@@ -172,7 +251,13 @@ final class StripArtViewModel: ObservableObject {
     func confirmEndPhase(geometry: CropGeometry) {
         guard scrollDirection != nil else { return }
         let endRect = geometry.cropRectInImage(scale: cropState.scale, offset: cropState.offset)
+        if Self.cropRectsAreEffectivelyEqual(confirmedCropRect, endRect) {
+            errorMessage = "The start and end positions must be different. Move the picture around."
+            return
+        }
         endCropRect = endRect
+        phaseEndOffset = cropState.offset
+        phaseEndScale = cropState.scale
         // The viewport animates from the start framing to the end framing. The
         // pipeline direction is the way the viewport actually travels between
         // them, derived from their delta so playback always matches the framing.
@@ -190,6 +275,14 @@ final class StripArtViewModel: ObservableObject {
         case .horizontal:
             return (end.minX - start.minX) >= 0 ? .right : .left
         }
+    }
+
+    private static func cropRectsAreEffectivelyEqual(_ a: CGRect, _ b: CGRect) -> Bool {
+        let epsilon: CGFloat = 0.5
+        return abs(a.origin.x - b.origin.x) < epsilon
+            && abs(a.origin.y - b.origin.y) < epsilon
+            && abs(a.width - b.width) < epsilon
+            && abs(a.height - b.height) < epsilon
     }
 
     /// Locks end-phase panning to the chosen axis (the perpendicular axis stays
@@ -232,6 +325,8 @@ final class StripArtViewModel: ObservableObject {
     func cancelFrameRate() {
         stopAnimation()
         cropPhase = .end
+        pendingEndTransformRestore = true
+        restoreEndPhaseTransform(geometry: nil)
         screen = .crop
     }
 
@@ -261,6 +356,8 @@ final class StripArtViewModel: ObservableObject {
 
         let algorithm = ditherAlgorithm
         let contrastValue = contrast
+        let brightnessValue = brightness
+        let mode = playbackMode
         let selected = min(max(minFrameCount, frameCount), maxFrameCount)
         let processor = ImageProcessor()
 
@@ -269,7 +366,9 @@ final class StripArtViewModel: ObservableObject {
                 processor.renderScrollAnimation(
                     from: source,
                     algorithm: algorithm,
-                    contrast: contrastValue
+                    contrast: contrastValue,
+                    brightness: brightnessValue,
+                    playbackMode: mode
                 )
             }.value
 
@@ -293,6 +392,7 @@ final class StripArtViewModel: ObservableObject {
 
         let algorithm = ditherAlgorithm
         let contrastValue = contrast
+        let brightnessValue = brightness
         let processor = ImageProcessor()
 
         stillRenderTask = Task {
@@ -300,7 +400,8 @@ final class StripArtViewModel: ObservableObject {
                 guard let cgImage = processor.renderStrip(
                     from: source,
                     algorithm: algorithm,
-                    contrast: contrastValue
+                    contrast: contrastValue,
+                    brightness: brightnessValue
                 ) else { return nil }
                 return UIImage(cgImage: cgImage)
             }.value
@@ -331,11 +432,16 @@ final class StripArtViewModel: ObservableObject {
         maxFrameCount = 0
         scrollDirection = .down
         ditherAlgorithm = .ordered
+        playbackMode = .bounce
         contrast = 0
+        brightness = 0
         stillPreview = nil
         stillRenderTask?.cancel()
         cropPhase = .start
         endCropRect = .zero
+        phaseEndOffset = .zero
+        phaseEndScale = 1.0
+        pendingEndTransformRestore = false
         showSaveConfirmation = false
         selectedPhotoItem = nil
         sourceImage = nil
@@ -410,14 +516,17 @@ final class StripArtViewModel: ObservableObject {
                 isPreparingFrames = false
                 errorMessage = "Could not generate animation."
                 cropPhase = .end
+                pendingEndTransformRestore = true
+                restoreEndPhaseTransform(geometry: nil)
                 screen = .crop
                 return
             }
 
             scrollAnimationSource = source
 
+            let mode = playbackMode
             let generated = await Task.detached(priority: .userInitiated) {
-                processor.renderScrollAnimation(from: source, algorithm: algorithm)
+                processor.renderScrollAnimation(from: source, algorithm: algorithm, playbackMode: mode)
             }.value
 
             fullCgFrames = generated
@@ -428,6 +537,8 @@ final class StripArtViewModel: ObservableObject {
             if generated.isEmpty {
                 errorMessage = "Could not generate animation."
                 cropPhase = .end
+                pendingEndTransformRestore = true
+                restoreEndPhaseTransform(geometry: nil)
                 screen = .crop
             }
         }
@@ -445,13 +556,21 @@ final class StripArtViewModel: ObservableObject {
         case .appearance:
             renderStillPreview()
         case .preview:
-            reapplyDitherAlgorithm()
+            rerenderPreviewAnimation()
         default:
             break
         }
     }
 
-    private func reapplyDitherAlgorithm() {
+    /// Switches between bounce and loop playback, re-rendering the live preview.
+    func selectPlaybackMode(_ mode: PlaybackMode) {
+        guard mode != playbackMode else { return }
+        playbackMode = mode
+        guard screen == .preview, scrollAnimationSource != nil else { return }
+        rerenderPreviewAnimation()
+    }
+
+    private func rerenderPreviewAnimation() {
         guard let source = scrollAnimationSource else { return }
 
         stopAnimation()
@@ -460,12 +579,20 @@ final class StripArtViewModel: ObservableObject {
 
         let algorithm = ditherAlgorithm
         let contrastValue = contrast
+        let brightnessValue = brightness
+        let mode = playbackMode
         let selectedFrameCount = min(max(minFrameCount, frameCount), maxFrameCount)
         let processor = ImageProcessor()
 
         Task {
             let rendered = await Task.detached(priority: .userInitiated) {
-                processor.renderScrollAnimation(from: source, algorithm: algorithm, contrast: contrastValue)
+                processor.renderScrollAnimation(
+                    from: source,
+                    algorithm: algorithm,
+                    contrast: contrastValue,
+                    brightness: brightnessValue,
+                    playbackMode: mode
+                )
             }.value
 
             fullCgFrames = rendered
@@ -580,10 +707,7 @@ final class StripArtViewModel: ObservableObject {
     func syncResolutionFromText() {
         let height = Int(heightText.filter(\.isNumber)) ?? 0
         let width = Int(widthText.filter(\.isNumber)) ?? 0
-        resolution = LEDResolution(
-            height: min(256, height),
-            width: min(512, width)
-        )
+        resolution = LEDResolution(height: height, width: width)
         if resolution.isValid {
             var state = cropState
             state.aspectRatio = resolution.aspectRatio
@@ -591,20 +715,19 @@ final class StripArtViewModel: ObservableObject {
         }
     }
 
-    /// Normalizes the text fields to the clamped values once editing finishes.
+    /// Fills empty fields with defaults when editing finishes. Out-of-range values
+    /// are left as typed so the inline validation message stays visible.
     func normalizeResolutionText() {
-        let height = Int(heightText.filter(\.isNumber)) ?? LEDResolution.default.height
-        let width = Int(widthText.filter(\.isNumber)) ?? LEDResolution.default.width
-        resolution = LEDResolution(
-            height: max(1, min(256, height)),
-            width: max(1, min(512, width))
-        )
-        heightText = String(resolution.height)
-        widthText = String(resolution.width)
-        var state = cropState
-        state.aspectRatio = resolution.aspectRatio
-        cropState = state
-        resolution.save()
+        if heightText.filter(\.isNumber).isEmpty {
+            heightText = String(LEDResolution.default.height)
+        }
+        if widthText.filter(\.isNumber).isEmpty {
+            widthText = String(LEDResolution.default.width)
+        }
+        syncResolutionFromText()
+        if resolution.isValid {
+            resolution.save()
+        }
     }
 
     /// Applies a clamped crop transform from the crop view's gestures.
@@ -812,6 +935,29 @@ struct CropGeometry {
             height: relative.height * imagePixelSize.height
         )
         return pixelRect.intersection(CGRect(origin: .zero, size: imagePixelSize))
+    }
+
+    /// Inverse of `cropRectInImage`: finds the pan offset that places `cropRect`
+    /// under the selection frame at the given zoom level.
+    func offset(for cropRect: CGRect, scale: CGFloat) -> CGSize {
+        guard isValid else { return .zero }
+        let photoW = containerSize.width * scale
+        let photoH = containerSize.height * scale
+        guard photoW > 0, photoH > 0 else { return .zero }
+
+        let f = frame
+        let photoMinX = f.minX - cropRect.minX * photoW / imagePixelSize.width
+        let photoMinY = f.minY - cropRect.minY * photoH / imagePixelSize.height
+        let centerX = photoMinX + photoW / 2
+        let centerY = photoMinY + photoH / 2
+
+        return clampedOffset(
+            scale: scale,
+            offset: CGSize(
+                width: centerX - containerSize.width / 2,
+                height: centerY - containerSize.height / 2
+            )
+        )
     }
 }
 

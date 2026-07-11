@@ -5,21 +5,34 @@ struct FreeExportsStatusView: View {
     let limit: Int
     var compact: Bool = false
 
+    private var isExhausted: Bool { remaining == 0 }
+
+    private var accentColor: Color {
+        isExhausted
+            ? Color(red: 0.68, green: 0.08, blue: 0.10)
+            : Color(red: 0.82, green: 0.18, blue: 0.18)
+    }
+
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: remaining == 0 ? "lock.fill" : "gift.fill")
+            Image(systemName: isExhausted ? "lock.fill" : "gift.fill")
                 .font(compact ? .caption.weight(.semibold) : .subheadline.weight(.semibold))
 
             Text(statusText)
                 .font(compact ? .caption.weight(.semibold) : .subheadline.weight(.semibold))
                 .multilineTextAlignment(.leading)
         }
-        .foregroundStyle(remaining == 0 ? Color.red : Color.orange)
+        .foregroundStyle(accentColor)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, compact ? 8 : 10)
         .padding(.horizontal, 16)
         .background(
-            (remaining == 0 ? Color.red : Color.orange).opacity(0.12)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(accentColor.opacity(0.14))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(accentColor.opacity(0.28), lineWidth: 1)
         )
     }
 

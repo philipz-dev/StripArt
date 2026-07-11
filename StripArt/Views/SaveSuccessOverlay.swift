@@ -25,8 +25,6 @@ struct SaveSuccessOverlay: View {
 
                     if showsFreemiumInfo {
                         remainingBadge(for: remainingFreeExports)
-                    } else {
-                        unlockedBadge
                     }
                 }
 
@@ -92,15 +90,15 @@ struct SaveSuccessOverlay: View {
         } label: {
             if store.purchaseInProgress {
                 ProgressView()
-                    .tint(BrandStyle.blue)
+                    .tint(.white)
                     .frame(maxWidth: .infinity)
             } else {
                 Label("Unlock unlimited · \(store.displayPrice)", systemImage: "sparkles")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(BrandStyle.blue)
                     .frame(maxWidth: .infinity)
             }
         }
+        .buttonStyle(GradientButtonStyle())
         .disabled(store.purchaseInProgress)
     }
 
@@ -131,18 +129,6 @@ struct SaveSuccessOverlay: View {
         } else {
             "\(remaining) free animations left."
         }
-    }
-
-    private var unlockedBadge: some View {
-        Label {
-            Text("Unlimited exports unlocked")
-                .font(.footnote.weight(.semibold))
-        } icon: {
-            Image(systemName: "checkmark.seal.fill")
-                .font(.footnote)
-        }
-        .foregroundStyle(BrandStyle.blue)
-        .multilineTextAlignment(.center)
     }
 }
 

@@ -43,7 +43,32 @@ enum ScrollDirection: String, CaseIterable, Identifiable {
     }
 }
 
-enum ScrollAxis {
+enum ScrollAxis: String, CaseIterable, Identifiable {
     case horizontal
     case vertical
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .horizontal: "Horizontal"
+        case .vertical: "Vertical"
+        }
+    }
+
+    /// A double-headed arrow representing movement along the axis.
+    var systemImageName: String {
+        switch self {
+        case .horizontal: "arrow.left.arrow.right"
+        case .vertical: "arrow.up.arrow.down"
+        }
+    }
+
+    /// Default travel direction chosen when the user picks this axis.
+    var defaultDirection: ScrollDirection {
+        switch self {
+        case .horizontal: .right
+        case .vertical: .down
+        }
+    }
 }

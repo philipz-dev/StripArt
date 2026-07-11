@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct TipsView: View {
+    let isUnlocked: Bool
+    let remaining: Int
+    let limit: Int
     @Binding var doNotShowAgain: Bool
     let onContinue: () -> Void
     let onDismiss: () -> Void
@@ -13,6 +16,8 @@ struct TipsView: View {
 
             VStack(spacing: 28) {
                 header
+
+                exportStatusBadge
 
                 VStack(alignment: .leading, spacing: 22) {
                     tipRow(
@@ -72,6 +77,59 @@ struct TipsView: View {
             Text("Tips")
                 .font(.system(.largeTitle, design: .rounded).weight(.bold))
                 .foregroundStyle(.primary)
+        }
+    }
+
+    // MARK: - Export status
+
+    private var exportStatusBadge: some View {
+        HStack(spacing: 8) {
+            Image(systemName: exportStatusIcon)
+                .font(.subheadline.weight(.semibold))
+
+            Text(exportStatusText)
+                .font(.subheadline.weight(.semibold))
+                .multilineTextAlignment(.leading)
+        }
+        .foregroundStyle(exportStatusColor)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 10)
+        .padding(.horizontal, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(exportStatusColor.opacity(0.14))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(exportStatusColor.opacity(0.28), lineWidth: 1)
+        )
+    }
+
+    private var exportStatusIcon: String {
+        if isUnlocked { "checkmark.seal.fill" }
+        else if remaining == 0 { "lock.fill" }
+        else { "gift.fill" }
+    }
+
+    private var exportStatusColor: Color {
+        if isUnlocked {
+            Color(red: 0.05, green: 0.27, blue: 0.78)
+        } else if remaining == 0 {
+            Color(red: 0.68, green: 0.08, blue: 0.10)
+        } else {
+            Color(red: 0.82, green: 0.18, blue: 0.18)
+        }
+    }
+
+    private var exportStatusText: String {
+        if isUnlocked {
+            "Unlimited exports"
+        } else if remaining == 0 {
+            "No free animations remaining"
+        } else if remaining == 1 {
+            "1 of \(limit) free animations remaining"
+        } else {
+            "\(remaining) of \(limit) free animations remaining"
         }
     }
 

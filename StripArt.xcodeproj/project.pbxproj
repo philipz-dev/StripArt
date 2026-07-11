@@ -22,6 +22,7 @@
 		A100010014 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A100020014 /* Assets.xcassets */; };
 		A100010017 /* FrameRateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020017 /* FrameRateView.swift */; };
 		A100010018 /* DitherAlgorithm.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020018 /* DitherAlgorithm.swift */; };
+		A100010040 /* PlaybackMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020041 /* PlaybackMode.swift */; };
 		A100010019 /* StripArtButtonStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020019 /* StripArtButtonStyles.swift */; };
 		A100010020 /* SaveSuccessOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020020 /* SaveSuccessOverlay.swift */; };
 		A100010021 /* CameraPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020021 /* CameraPicker.swift */; };
@@ -30,7 +31,6 @@
 		A100010025 /* StoreManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020025 /* StoreManager.swift */; };
 		A100010026 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020026 /* PaywallView.swift */; };
 		A100010027 /* DebugReset.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020028 /* DebugReset.swift */; };
-		A100010028 /* StoreKitTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A100020029 /* StoreKitTest.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		A100010029 /* FreeExportsStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020031 /* FreeExportsStatusView.swift */; };
 		A100010030 /* SavedAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020032 /* SavedAnimation.swift */; };
 		A100010031 /* GalleryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020033 /* GalleryStore.swift */; };
@@ -61,6 +61,7 @@
 		A100020016 /* StripArt.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StripArt.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A100020017 /* FrameRateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameRateView.swift; sourceTree = "<group>"; };
 		A100020018 /* DitherAlgorithm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DitherAlgorithm.swift; sourceTree = "<group>"; };
+		A100020041 /* PlaybackMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackMode.swift; sourceTree = "<group>"; };
 		A100020019 /* StripArtButtonStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StripArtButtonStyles.swift; sourceTree = "<group>"; };
 		A100020020 /* SaveSuccessOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveSuccessOverlay.swift; sourceTree = "<group>"; };
 		A100020021 /* CameraPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPicker.swift; sourceTree = "<group>"; };
@@ -70,7 +71,6 @@
 		A100020026 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
 		A100020027 /* StripArt.storekit */ = {isa = PBXFileReference; lastKnownFileType = text.storekit; path = StripArt.storekit; sourceTree = "<group>"; };
 		A100020028 /* DebugReset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugReset.swift; sourceTree = "<group>"; };
-		A100020029 /* StoreKitTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKitTest.framework; path = System/Library/Frameworks/StoreKitTest.framework; sourceTree = SDKROOT; };
 		A100020030 /* TESTFLIGHT-CHECKLIST.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "TESTFLIGHT-CHECKLIST.md"; sourceTree = "<group>"; };
 		A100020031 /* FreeExportsStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeExportsStatusView.swift; sourceTree = "<group>"; };
 		A100020032 /* SavedAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedAnimation.swift; sourceTree = "<group>"; };
@@ -89,28 +89,18 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A100010028 /* StoreKitTest.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		184376D02FE9E45B00085DB0 /* Recovered References */ = {
-			isa = PBXGroup;
-			children = (
-				A100020029 /* StoreKitTest.framework */,
-			);
-			name = "Recovered References";
-			sourceTree = "<group>";
-		};
 		A100040001 = {
 			isa = PBXGroup;
 			children = (
 				A100040002 /* StripArt */,
 				A100020030 /* TESTFLIGHT-CHECKLIST.md */,
 				A100040003 /* Products */,
-				184376D02FE9E45B00085DB0 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -145,6 +135,7 @@
 				A100020018 /* DitherAlgorithm.swift */,
 				A100020003 /* LEDResolution.swift */,
 				A100020004 /* ScrollDirection.swift */,
+				A100020041 /* PlaybackMode.swift */,
 				A100020032 /* SavedAnimation.swift */,
 			);
 			path = Models;
@@ -280,6 +271,7 @@
 				A100010004 /* ScrollDirection.swift in Sources */,
 				A100010005 /* AppScreen.swift in Sources */,
 				A100010018 /* DitherAlgorithm.swift in Sources */,
+				A100010040 /* PlaybackMode.swift in Sources */,
 				A100010019 /* StripArtButtonStyles.swift in Sources */,
 				A100010020 /* SaveSuccessOverlay.swift in Sources */,
 				A100010021 /* CameraPicker.swift in Sources */,
@@ -382,7 +374,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 17;
+				CURRENT_PROJECT_VERSION = 18;
 				DEVELOPMENT_TEAM = PB4953L2J4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -411,7 +403,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 17;
+				CURRENT_PROJECT_VERSION = 18;
 				DEVELOPMENT_TEAM = PB4953L2J4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;

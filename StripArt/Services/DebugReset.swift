@@ -1,7 +1,11 @@
 #if DEBUG
-import StoreKitTest
+import Foundation
 
 /// Resets local test state so the app behaves like a fresh install.
+///
+/// StoreKit sandbox transaction reset belongs in a unit-test target (StoreKitTest
+/// pulls in XCTest and cannot be linked into the app). For manual testing, use
+/// Xcode's StoreKit Configuration file on the run scheme instead.
 enum DebugReset {
     @MainActor
     static func performFullReset(store: StoreManager, viewModel: StripArtViewModel, gallery: GalleryStore) async {
@@ -13,11 +17,6 @@ enum DebugReset {
         gallery.removeAllForTesting()
         store.purchaseError = nil
         viewModel.showPaywall = false
-
-        if let session = try? SKTestSession(configurationFileNamed: "StripArt") {
-            session.clearTransactions()
-            try? session.resetToDefaultState()
-        }
 
         await store.refreshEntitlements()
     }

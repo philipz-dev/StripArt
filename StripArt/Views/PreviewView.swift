@@ -7,31 +7,84 @@ struct PreviewView: View {
     @State private var shareItem: ShareGIFItem?
 
     var body: some View {
-        VStack(spacing: 24) {
-            header
+        GeometryReader { geometry in
+            let previewMaxHeight = Self.previewMaxHeight(
+                in: geometry.size,
+                showsDirection: viewModel.scrollDirection != nil,
+                showsExportStatus: !store.isUnlocked,
+                showsShareButton: !needsUnlock
+            )
 
-            previewArea
+            VStack(spacing: 16) {
+                header
 
-            if let direction = viewModel.scrollDirection {
-                Text("Direction: \(direction.label) · \(viewModel.resolution.height)×\(viewModel.resolution.width) px")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                simulationBlock(maxHeight: previewMaxHeight)
+
+                Spacer(minLength: 0)
+
+                actionButtons
             }
-
-            Spacer()
-
-            actionButtons
+            .padding(24)
+            .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
         }
-        .padding(24)
         .navigationBarHidden(true)
         .sheet(item: $shareItem) { item in
             ActivityShareSheet(items: [item.url])
         }
     }
 
+    /// LED preview, metadata, and playback controls stay grouped so the buttons
+    /// sit directly beneath the animation regardless of its rendered size.
+    private func simulationBlock(maxHeight: CGFloat) -> some View {
+        VStack(spacing: 12) {
+            previewArea(maxHeight: maxHeight)
+
+            if let direction = viewModel.scrollDirection {
+                Text("Direction: \(direction.label) · \(viewModel.resolution.height)×\(viewModel.resolution.width) px")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
+                    .frame(maxWidth: .infinity)
+            }
+
+            playbackSection
+        }
+    }
+
+    private static func previewMaxHeight(
+        in size: CGSize,
+        showsDirection: Bool,
+        showsExportStatus: Bool,
+        showsShareButton: Bool
+    ) -> CGFloat {
+        let verticalPadding: CGFloat = 48
+        let headerBlock: CGFloat = 78
+        let directionLine: CGFloat = showsDirection ? 20 : 0
+        let playbackBlock: CGFloat = 72
+        let sectionSpacing: CGFloat = 12 * 2 + 16
+        let exportStatus: CGFloat = showsExportStatus ? 44 : 0
+        let primaryActions: CGFloat = 48
+        let shareAction: CGFloat = showsShareButton ? 60 : 0
+        let actionSpacing: CGFloat = 12 * (showsShareButton ? 2 : 1)
+
+        let reserved = verticalPadding
+            + headerBlock
+            + directionLine
+            + playbackBlock
+            + sectionSpacing
+            + exportStatus
+            + primaryActions
+            + shareAction
+            + actionSpacing
+
+        return max(72, size.height - reserved)
+    }
+
     private var header: some View {
         VStack(spacing: 10) {
-            ScreenTitle(title: "Preview")
+            ScreenTitle(title: "LED simulation")
             Text("Pixel-perfect preview at LED resolution")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -39,7 +92,7 @@ struct PreviewView: View {
     }
 
     @ViewBuilder
-    private var previewArea: some View {
+    private func previewArea(maxHeight: CGFloat) -> some View {
         ZStack {
             Color.black
 
@@ -57,7 +110,30 @@ struct PreviewView: View {
         // up for any resolution, including portrait ones.
         .aspectRatio(viewModel.resolution.aspectRatio, contentMode: .fit)
         .overlay(Picture3DBorder())
-        .frame(maxWidth: .infinity, maxHeight: 280)
+        .frame(maxWidth: .infinity)
+        .frame(maxHeight: maxHeight)
+    }
+
+    private var playbackSection: some View {
+        HStack(spacing: 16) {
+            alignedPlaybackButton(for: .bounce)
+            alignedPlaybackButton(for: .loop)
+        }
+    }
+
+    private func alignedPlaybackButton(for mode: PlaybackMode) -> some View {
+        HStack {
+            Spacer(minLength: 0)
+            PlaybackChoiceButton(
+                mode: mode,
+                isSelected: viewModel.playbackMode == mode
+            ) {
+                viewModel.selectPlaybackMode(mode)
+            }
+            .disabled(viewModel.isProcessing || viewModel.isReprocessingDither)
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private var actionButtons: some View {
@@ -140,6 +216,66 @@ struct PreviewView: View {
         } catch {
             viewModel.errorMessage = "Could not prepare the file."
         }
+    }
+}
+
+/// Compact square bounce/loop toggle for the LED simulation screen.
+private struct PlaybackChoiceButton: View {
+    let mode: PlaybackMode
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 6) {
+                Image(systemName: mode.systemImageName)
+                    .font(.system(size: 22, weight: .semibold))
+                    .symbolRenderingMode(.monochrome)
+                    .rotationEffect(.degrees(90))
+
+                Text(mode.label)
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+            }
+            .frame(width: 72, height: 72)
+            .foregroundStyle(isSelected ? .white : .primary)
+            .background(
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(isSelected ? BrandStyle.blue : BrandStyle.neutral)
+                    if isSelected {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: [.white.opacity(0.28), .clear],
+                                    startPoint: .top,
+                                    endPoint: .center
+                                )
+                            )
+                    }
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(
+                            isSelected ? .white.opacity(0.25) : .black.opacity(0.08),
+                            lineWidth: 1
+                        )
+                }
+            )
+            .shadow(
+                color: (isSelected ? BrandStyle.blueShadow : .black).opacity(isSelected ? 0.30 : 0.10),
+                radius: isSelected ? 5 : 3,
+                x: 0,
+                y: isSelected ? 3 : 2
+            )
+        }
+        .buttonStyle(PlaybackPushButtonStyle())
+    }
+}
+
+private struct PlaybackPushButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.94 : 1)
+            .animation(.spring(response: 0.22, dampingFraction: 0.7), value: configuration.isPressed)
     }
 }
 

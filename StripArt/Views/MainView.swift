@@ -10,6 +10,7 @@ struct MainView: View {
     @State private var showCamera = false
     @State private var showPhotoPicker = false
     @State private var showTips = false
+    @State private var showResolutionAlert = false
     @State private var doNotShowTipsAgain = false
     @State private var pendingPhotoAction: PendingPhotoAction?
     @FocusState private var focusedField: ResolutionField?
@@ -55,6 +56,9 @@ struct MainView: View {
         .overlay {
             if showTips {
                 TipsView(
+                    isUnlocked: store.isUnlocked,
+                    remaining: viewModel.remainingFreeExports,
+                    limit: viewModel.freeExportLimit,
                     doNotShowAgain: $doNotShowTipsAgain,
                     onContinue: continueFromTips,
                     onDismiss: dismissTips
@@ -63,6 +67,11 @@ struct MainView: View {
             }
         }
         .animation(.easeInOut(duration: 0.25), value: showTips)
+        .alert("Invalid resolution", isPresented: $showResolutionAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Both width and height must be a value between 12 and 256.")
+        }
     }
 
     // MARK: - Setup (no photo yet)
@@ -79,15 +88,16 @@ struct MainView: View {
                     }
                     .padding(.bottom, 8)
 
-                    ExportAllowanceView(
-                        store: store,
-                        remaining: viewModel.remainingFreeExports,
-                        limit: viewModel.freeExportLimit
-                    )
-
                     resolutionSection
 
                     photoSection
+
+                    ExportAllowanceView(
+                        store: store,
+                        remaining: viewModel.remainingFreeExports,
+                        limit: viewModel.freeExportLimit,
+                        showsUnlockButton: true
+                    )
                 }
                 .padding(24)
                 .padding(.bottom, hideTipsOnPhotoAction ? 56 : 0)
@@ -140,8 +150,8 @@ struct MainView: View {
                 resolutionField(title: "Width", text: $viewModel.widthText, field: .width)
             }
 
-            if !viewModel.resolutionIsValid {
-                Text("Enter valid values (1–256 height, 1–512 width).")
+            if !viewModel.resolutionIsValidForPhotoImport {
+                Text("Enter valid values (12–256 height, 12–256 width).")
                     .font(.caption)
                     .foregroundStyle(.red)
             } else {
@@ -245,7 +255,7 @@ struct MainView: View {
     private func beginPhotoAction(_ action: PendingPhotoAction) {
         focusedField = nil
         if hideTipsOnPhotoAction {
-            performPhotoAction(action)
+            attemptPhotoAction(action)
         } else {
             pendingPhotoAction = action
             doNotShowTipsAgain = false
@@ -264,7 +274,7 @@ struct MainView: View {
         doNotShowTipsAgain = false
 
         if let action {
-            performPhotoAction(action)
+            attemptPhotoAction(action)
         }
     }
 
@@ -272,6 +282,15 @@ struct MainView: View {
         pendingPhotoAction = nil
         showTips = false
         doNotShowTipsAgain = false
+    }
+
+    private func attemptPhotoAction(_ action: PendingPhotoAction) {
+        viewModel.syncResolutionFromText()
+        guard viewModel.resolutionIsValidForPhotoImport else {
+            showResolutionAlert = true
+            return
+        }
+        performPhotoAction(action)
     }
 
     private func performPhotoAction(_ action: PendingPhotoAction) {

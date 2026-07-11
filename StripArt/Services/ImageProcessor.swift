@@ -14,8 +14,35 @@ struct ScrollAnimationSource: Sendable {
     let targetWidth: Int
     let targetHeight: Int
     let baseViewport: CGRect
-    let offsets: [Int]
+    /// Smallest viewport offset along the scroll axis (usually 0).
+    let minOffset: Int
+    /// Largest viewport offset (the user-defined end position, or the strip end).
+    let maxOffset: Int
     let direction: ScrollDirection
+
+    /// The per-frame viewport offsets for a given playback mode.
+    ///
+    /// - `bounce`: forward (min→max) then reversed (max→min).
+    /// - `loop`: forward only; looping playback jumps from max straight to min.
+    static func offsets(min minOffset: Int, max maxOffset: Int, mode: PlaybackMode) -> [Int] {
+        guard maxOffset > minOffset else { return [0, 0] }
+
+        var values: [Int] = []
+        values.reserveCapacity((maxOffset - minOffset + 1) * 2)
+        for offset in minOffset...maxOffset {
+            values.append(offset)
+        }
+        if mode == .bounce {
+            for offset in stride(from: maxOffset - 1, through: minOffset, by: -1) {
+                values.append(offset)
+            }
+        }
+        return values
+    }
+
+    func offsets(for mode: PlaybackMode) -> [Int] {
+        Self.offsets(min: minOffset, max: maxOffset, mode: mode)
+    }
 }
 
 struct ImageProcessor {
@@ -207,20 +234,7 @@ struct ImageProcessor {
             maxOffset = min(maxOffset, max(0, Int(endOffset.rounded())))
         }
 
-        let offsets: [Int]
-        if maxOffset > minOffset {
-            var values: [Int] = []
-            values.reserveCapacity((maxOffset - minOffset + 1) * 2)
-            for offset in minOffset...maxOffset {
-                values.append(offset)
-            }
-            for offset in stride(from: maxOffset - 1, through: minOffset, by: -1) {
-                values.append(offset)
-            }
-            offsets = values
-        } else {
-            offsets = [0, 0]
-        }
+        let hasTravel = maxOffset > minOffset
 
         return ScrollAnimationSource(
             unditheredPixels: unditheredPixels,
@@ -229,7 +243,8 @@ struct ImageProcessor {
             targetWidth: targetWidth,
             targetHeight: targetHeight,
             baseViewport: scaledCrop,
-            offsets: offsets,
+            minOffset: hasTravel ? minOffset : 0,
+            maxOffset: hasTravel ? maxOffset : 0,
             direction: direction
         )
     }
@@ -239,10 +254,13 @@ struct ImageProcessor {
         algorithm: DitherAlgorithm,
         mode: DitherMode = .rgb,
         levelsPerChannel: Int = 8,
-        contrast: Double = 0
+        contrast: Double = 0,
+        brightness: Double = 0,
+        playbackMode: PlaybackMode = .bounce
     ) -> [CGImage] {
         var pixels = source.unditheredPixels
         applyContrast(&pixels, amount: contrast)
+        applyBrightness(&pixels, amount: brightness)
         applyDither(
             &pixels,
             width: source.sourceWidth,
@@ -252,7 +270,7 @@ struct ImageProcessor {
             levelsPerChannel: levelsPerChannel
         )
 
-        return source.offsets.compactMap { offset in
+        return source.offsets(for: playbackMode).compactMap { offset in
             let viewport = viewportRect(
                 base: source.baseViewport,
                 offset: offset,
@@ -276,10 +294,12 @@ struct ImageProcessor {
         algorithm: DitherAlgorithm,
         mode: DitherMode = .rgb,
         levelsPerChannel: Int = 8,
-        contrast: Double = 0
+        contrast: Double = 0,
+        brightness: Double = 0
     ) -> CGImage? {
         var pixels = source.unditheredPixels
         applyContrast(&pixels, amount: contrast)
+        applyBrightness(&pixels, amount: brightness)
         applyDither(
             &pixels,
             width: source.sourceWidth,
@@ -302,7 +322,7 @@ struct ImageProcessor {
     /// the strip that is ever visible on the LED bar between start and end.
     private func animatedRegion(for source: ScrollAnimationSource) -> CGRect {
         let base = source.baseViewport
-        let maxOffset = CGFloat(source.offsets.max() ?? 0)
+        let maxOffset = CGFloat(source.maxOffset)
 
         switch source.direction {
         case .down:
@@ -352,6 +372,26 @@ struct ImageProcessor {
         func adjust(_ value: UInt8) -> UInt8 {
             let scaled = (Double(value) - 128) * factor + 128
             return UInt8(clamping: Int(scaled.rounded()))
+        }
+
+        var index = 0
+        let count = pixels.count
+        while index + 2 < count {
+            pixels[index] = adjust(pixels[index])
+            pixels[index + 1] = adjust(pixels[index + 1])
+            pixels[index + 2] = adjust(pixels[index + 2])
+            index += 4
+        }
+    }
+
+    /// Shifts each channel up or down. `amount` ranges from -1 (darker) to 1
+    /// (brighter); 0 leaves the pixels untouched.
+    private func applyBrightness(_ pixels: inout [UInt8], amount: Double) {
+        guard amount != 0 else { return }
+        let offset = max(-1, min(1, amount)) * 128
+
+        func adjust(_ value: UInt8) -> UInt8 {
+            UInt8(clamping: Int((Double(value) + offset).rounded()))
         }
 
         var index = 0

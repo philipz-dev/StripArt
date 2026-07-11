@@ -6,32 +6,49 @@ struct ExportAllowanceView: View {
     let remaining: Int
     let limit: Int
     var compact: Bool = false
+    var showsUnlockButton: Bool = false
 
+    @ViewBuilder
     var body: some View {
-        if store.isUnlocked {
-            unlockedBadge
-        } else {
-            FreeExportsStatusView(
-                remaining: remaining,
-                limit: limit,
-                compact: compact
-            )
+        if !store.isUnlocked {
+            VStack(spacing: 12) {
+                FreeExportsStatusView(
+                    remaining: remaining,
+                    limit: limit,
+                    compact: compact
+                )
+
+                if showsUnlockButton {
+                    unlockButton
+
+                    if let error = store.purchaseError {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundStyle(Color(red: 0.75, green: 0.12, blue: 0.12))
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                    }
+                }
+            }
         }
     }
 
-    private var unlockedBadge: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "checkmark.seal.fill")
-                .font(compact ? .caption.weight(.semibold) : .subheadline.weight(.semibold))
-
-            Text("Unlimited exports unlocked")
-                .font(compact ? .caption.weight(.semibold) : .subheadline.weight(.semibold))
-                .multilineTextAlignment(.leading)
+    private var unlockButton: some View {
+        Button {
+            store.purchaseError = nil
+            Task { await store.purchase() }
+        } label: {
+            if store.purchaseInProgress {
+                ProgressView()
+                    .tint(.white)
+                    .frame(maxWidth: .infinity)
+            } else {
+                Label("Unlock unlimited · \(store.displayPrice)", systemImage: "sparkles")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+            }
         }
-        .foregroundStyle(BrandStyle.blue)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, compact ? 8 : 10)
-        .padding(.horizontal, 16)
-        .background(BrandStyle.blue.opacity(0.12))
+        .buttonStyle(GradientButtonStyle())
+        .disabled(store.purchaseInProgress)
     }
 }

@@ -28,8 +28,12 @@ struct LEDResolution: Equatable, Hashable {
     }
 
     var isValid: Bool {
-        height >= 1 && width >= 1 && height <= 256 && width <= 512
+        height >= Self.minDimension && width >= Self.minDimension
+            && height <= Self.maxDimension && width <= Self.maxDimension
     }
+
+    static let minDimension = 12
+    static let maxDimension = 256
 
     var pixelCount: Int {
         height * width

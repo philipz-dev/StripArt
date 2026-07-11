@@ -26,9 +26,13 @@ struct CropView: View {
 
             footer
 
+            phaseInstruction(
+                viewModel.cropPhase == .start ? "Define start position" : "Define end position"
+            )
+
             DecisionButtons(
                 confirmEnabled: stateGeometry?.isValid ?? false,
-                cancel: { viewModel.cancelCrop() },
+                cancel: { viewModel.cancelCrop(geometry: stateGeometry) },
                 confirm: { confirmPhase() }
             )
         }
@@ -87,7 +91,7 @@ struct CropView: View {
                     .allowsHitTesting(false)
 
                 if viewModel.cropPhase == .end, let direction = viewModel.scrollDirection {
-                    DirectionMoveArrow(direction: direction)
+                    DirectionMoveArrow(axis: direction.scrollAxis)
                         .position(x: g.frame.midX, y: g.frame.midY)
                         .allowsHitTesting(false)
                 }
@@ -111,7 +115,7 @@ struct CropView: View {
 
     private var topControls: some View {
         VStack(spacing: 14) {
-            Text(viewModel.cropPhase == .start ? "Define Starting View" : "Define Ending View")
+            Text("Animation")
                 .font(.system(.title2, design: .rounded).weight(.bold))
                 .foregroundStyle(BrandStyle.blue)
                 .lineLimit(1)
@@ -120,10 +124,14 @@ struct CropView: View {
                 .multilineTextAlignment(.center)
 
             HStack(spacing: 14) {
-                ForEach(ScrollDirection.allCases) { direction in
-                    directionArrow(direction)
+                ForEach(ScrollAxis.allCases) { axis in
+                    axisArrow(axis)
                 }
             }
+            .opacity(viewModel.cropPhase == .start ? 1 : 0)
+            .allowsHitTesting(viewModel.cropPhase == .start)
+            .frame(height: 50)
+            .accessibilityHidden(viewModel.cropPhase != .start)
         }
         .padding(.horizontal, 12)
     }
@@ -131,15 +139,24 @@ struct CropView: View {
     @ViewBuilder
     private var footer: some View {
         VStack(spacing: 10) {
-            if !hideCropTips {
-                tipBanner
-            }
+            tipBanner
+                .opacity(hideCropTips ? 0 : 1)
+                .allowsHitTesting(!hideCropTips)
+
             if stateGeometry?.photoBelowResolution == true {
                 warningBanner
             }
         }
         .frame(maxWidth: .infinity)
         .animation(.easeInOut(duration: 0.2), value: hideCropTips)
+    }
+
+    private func phaseInstruction(_ text: String) -> some View {
+        Text(text)
+            .font(.system(.headline, design: .rounded).weight(.semibold))
+            .foregroundStyle(.primary)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
     }
 
     private var tipBanner: some View {
@@ -150,8 +167,11 @@ struct CropView: View {
             .font(.footnote.weight(.medium))
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
+            .lineLimit(2)
+            .minimumScaleFactor(0.85)
             .padding(.vertical, 8)
             .padding(.horizontal, 14)
+            .frame(height: 56)
             .background(
                 Capsule(style: .continuous).fill(Color.black.opacity(0.05))
             )
@@ -172,12 +192,12 @@ struct CropView: View {
         )
     }
 
-    private func directionArrow(_ direction: ScrollDirection) -> some View {
-        let selected = viewModel.scrollDirection == direction
+    private func axisArrow(_ axis: ScrollAxis) -> some View {
+        let selected = viewModel.scrollDirection?.scrollAxis == axis
         return Button {
-            viewModel.selectScrollDirection(direction)
+            viewModel.selectScrollAxis(axis)
         } label: {
-            Image(systemName: direction.systemImageName)
+            Image(systemName: axis.systemImageName)
         }
         .buttonStyle(
             CircleIconButtonStyle(
@@ -261,6 +281,7 @@ struct CropView: View {
         cropAreaSize = size
         imagePixelSize = pixelSize(of: image)
         if let g = makeGeometry(container: size) {
+            viewModel.consumeEndTransformRestore(geometry: g)
             viewModel.normalizeCropTransform(geometry: g)
         }
     }
@@ -315,25 +336,16 @@ private struct CropFrameOverlay: View {
     }
 }
 
-/// Thick, semi-transparent arrow shown over the crop frame in the end phase to
-/// indicate which way the photo should be dragged.
+/// Thick, semi-transparent double-headed arrow shown over the crop frame in the
+/// end phase to indicate which axis the photo can be dragged along.
 private struct DirectionMoveArrow: View {
-    let direction: ScrollDirection
+    let axis: ScrollAxis
 
     var body: some View {
-        Image(systemName: "arrow.up")
+        Image(systemName: "arrow.up.and.down")
             .font(.system(size: 70, weight: .black))
             .foregroundStyle(.white.opacity(0.65))
             .shadow(color: .black.opacity(0.5), radius: 6, x: 0, y: 2)
-            .rotationEffect(rotation)
-    }
-
-    private var rotation: Angle {
-        switch direction {
-        case .up: .degrees(0)
-        case .right: .degrees(90)
-        case .down: .degrees(180)
-        case .left: .degrees(270)
-        }
+            .rotationEffect(axis == .horizontal ? .degrees(90) : .degrees(0))
     }
 }

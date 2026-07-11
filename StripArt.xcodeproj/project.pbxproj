@@ -22,7 +22,6 @@
 		A100010014 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A100020014 /* Assets.xcassets */; };
 		A100010017 /* FrameRateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020017 /* FrameRateView.swift */; };
 		A100010018 /* DitherAlgorithm.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020018 /* DitherAlgorithm.swift */; };
-		A100010040 /* PlaybackMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020041 /* PlaybackMode.swift */; };
 		A100010019 /* StripArtButtonStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020019 /* StripArtButtonStyles.swift */; };
 		A100010020 /* SaveSuccessOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020020 /* SaveSuccessOverlay.swift */; };
 		A100010021 /* CameraPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020021 /* CameraPicker.swift */; };
@@ -41,6 +40,7 @@
 		A100010036 /* FeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020038 /* FeatureFlags.swift */; };
 		A100010037 /* LEDSimulationRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020039 /* LEDSimulationRenderer.swift */; };
 		A100010038 /* ExportAllowanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020040 /* ExportAllowanceView.swift */; };
+		A100010040 /* PlaybackMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100020041 /* PlaybackMode.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -61,7 +61,6 @@
 		A100020016 /* StripArt.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StripArt.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A100020017 /* FrameRateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameRateView.swift; sourceTree = "<group>"; };
 		A100020018 /* DitherAlgorithm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DitherAlgorithm.swift; sourceTree = "<group>"; };
-		A100020041 /* PlaybackMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackMode.swift; sourceTree = "<group>"; };
 		A100020019 /* StripArtButtonStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StripArtButtonStyles.swift; sourceTree = "<group>"; };
 		A100020020 /* SaveSuccessOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveSuccessOverlay.swift; sourceTree = "<group>"; };
 		A100020021 /* CameraPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPicker.swift; sourceTree = "<group>"; };
@@ -82,6 +81,7 @@
 		A100020038 /* FeatureFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlags.swift; sourceTree = "<group>"; };
 		A100020039 /* LEDSimulationRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LEDSimulationRenderer.swift; sourceTree = "<group>"; };
 		A100020040 /* ExportAllowanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportAllowanceView.swift; sourceTree = "<group>"; };
+		A100020041 /* PlaybackMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackMode.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -386,7 +386,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.philip.stripart;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -415,7 +415,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.philip.stripart;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
